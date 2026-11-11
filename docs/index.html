@@ -765,9 +765,13 @@ function otaParse(buf){
   else if (!(d[8] === 0x4B && d[9] === 0x4E && d[10] === 0x4C && d[11] === 0x54)) r.why = T("нет заголовка KNLT: это не образ Telink");
   else if (dv.getUint32(0x18, true) !== d.length) r.why = T("длина в заголовке не совпадает с размером файла");
   else {
-    const key = "N437 fw "; let at = -1;
-    outer: for (let i = 0; i + key.length + 12 < d.length; i++){ for (let k = 0; k < key.length; k++) if (d[i + k] !== key.charCodeAt(k)) continue outer; at = i + key.length; break; }
-    let ver = ""; if (at >= 0) for (let j = 0; j < 12 && d[at + j] > 32 && d[at + j] < 127; j++) ver += String.fromCharCode(d[at + j]);
+    /* the text "N437 fw " also occurs alone in the image (a separate string): take the first occurrence followed by "437-" */
+    const key = "N437 fw "; let ver = "";
+    outer: for (let i = 0; i + key.length + 12 < d.length; i++){
+      for (let k = 0; k < key.length; k++) if (d[i + k] !== key.charCodeAt(k)) continue outer;
+      let v = ""; for (let j = 0; j < 12 && d[i + key.length + j] > 32 && d[i + key.length + j] < 127; j++) v += String.fromCharCode(d[i + key.length + j]);
+      if (/^437-/.test(v)) { ver = v; break; }
+    }
     if (!/^437-/.test(ver)) r.why = T("в образе нет строки «N437 fw 437-…»: это не прошивка для этой метки");
     else { r.ok = true; r.ver = ver; r.crc = crc32(d); }
   }
