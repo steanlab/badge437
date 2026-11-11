@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>badge437 — консоль</title>
+<style>
+:root{--bg:#f4f5f7;--fg:#1c1f24;--card:#fff;--bd:#d5d9e0;--acc:#2563eb;--mut:#6b7280;--log:#0f172a;--logfg:#d1fae5}
+@media (prefers-color-scheme:dark){:root{--bg:#14161a;--fg:#e6e8eb;--card:#1e2126;--bd:#343a43;--acc:#60a5fa;--mut:#9aa3af;--log:#0b0d10;--logfg:#a7f3d0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,sans-serif;padding:12px 16px 40px}
+main{max-width:760px;margin:0 auto}
+h1{font-size:18px;margin:6px 0 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin:0 0 8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
+button{font:inherit;padding:7px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--fg);cursor:pointer}
+button:hover:not(:disabled){border-color:var(--acc)}
+button:disabled{opacity:.45;cursor:default}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button.sm{padding:3px 8px;font-size:13px}
+button.danger{border-color:#d33;color:#d33}
+input,select{font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=text]{width:14em}
+input[type=range]{padding:0;width:9em}
+progress{width:100%;height:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{padding:4px 6px;border-bottom:1px solid var(--bd);text-align:left}
+th{color:var(--mut);font-weight:600;font-size:12px}
+#prev{width:176px;height:480px;border:1px solid var(--bd);border-radius:4px;image-rendering:pixelated;background:#fff}
+#st,small,label{color:var(--mut)}
+label{font-size:13px}
+#log{background:var(--log);color:var(--logfg);font:13px/1.35 ui-monospace,Menlo,Consolas,monospace;height:340px;overflow:auto;padding:8px;border-radius:8px;white-space:pre-wrap;word-break:break-all}
+#log .tx{color:#93c5fd}#log .sys{color:#fbbf24}
+details.card>summary{cursor:pointer;font-weight:600;font-size:14px;list-style-position:inside}
+details.card[open]>summary{margin-bottom:8px}
+.warn{margin-top:8px;padding:8px 10px;border-radius:8px;background:#fde8e8;color:#8a1f1f;border:1px solid #d33;font-size:13px}
+@media (prefers-color-scheme:dark){.warn{background:#3b1b1b;color:#fecaca}}
+.warn[hidden]{display:none}
+.cols{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+.cols>div{flex:1;min-width:230px}
+</style>
+</head>
+<body>
+<main>
+<h1>badge437 — консоль метки Hanshow Nebular Pro 437Q-N</h1>
+
+<div class="card">
+  <div class="row">
+    <button id="bConn" class="pri">Подключиться</button>
+    <button id="bDisc" disabled>Отключиться</button>
+    <label><input type="checkbox" id="showAll"> показать все устройства</label>
+    <span id="st">не подключено</span>
+  </div>
+  <div class="row"><small>Нужен Chrome/Edge с Web Bluetooth. Имя метки: OD- и четыре символа MAC (например OD-6D2A).</small></div>
+  <div id="fwWarn" class="warn" hidden></div>
+</div>
+
+<div class="card">
+  <h2>Слайды в памяти метки</h2>
+  <div class="row"><button class="nc" id="bList" disabled>Обновить список</button><span id="free"><small>—</small></span></div>
+  <table><thead><tr><th>№</th><th>формат</th><th>размер</th><th>секторов</th><th></th></tr></thead><tbody id="slotRows"><tr><td colspan="5"><small>список ещё не получен</small></td></tr></tbody></table>
+  <div class="row" style="margin-top:8px"><button class="nc danger" id="bEraseAll" disabled>Стереть все слоты</button></div>
+</div>
+
+<div class="card">
+  <h2>Новая картинка</h2>
+  <div class="cols">
+    <div>
+      <div class="row"><input type="file" id="file" accept="image/*"></div>
+      <div class="row"><label>вписать</label>
+        <select id="fit"><option value="cover">заполнить (обрезать)</option><option value="contain">целиком (поля белые)</option><option value="stretch">растянуть</option></select></div>
+      <div class="row"><label>поворот</label>
+        <select id="rot"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></div>
+      <div class="row"><label>растр</label>
+        <select id="dith"><option value="fs">Флойд–Стейнберг (фото)</option><option value="atk">Аткинсон (гравюры, текст)</option><option value="bay">упорядоченный (сжимается лучше)</option><option value="none">без растра</option></select></div>
+      <div class="row"><label>яркость</label><input type="range" id="bri" min="-60" max="60" value="0"> <label>контраст</label><input type="range" id="con" min="-60" max="60" value="0"></div>
+      <div class="row"><label>в слот</label><select id="slot"></select>
+        <button class="pri nc" id="bUp" disabled>Загрузить</button><button class="nc" id="bUpStop" disabled>Прервать</button></div>
+      <div class="row"><label>запись</label>
+        <select id="wmode"><option value="r">с подтверждением (надёжно)</option><option value="nr">без подтверждения (быстро)</option></select></div>
+      <progress id="prog" max="100" value="0"></progress>
+      <div class="row"><small id="upinfo">Выберите картинку: она приводится к 176×480 и четырём цветам (белый, чёрный, красный, жёлтый). Загружается самый короткий из трёх видов: без сжатия, LZ, LZ с вычитанием строк.</small></div>
+    </div>
+    <div><canvas id="prev" width="176" height="480"></canvas></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Панель</h2>
+  <div class="row"><label>ориентация</label>
+    <select id="oMode"><option value="0">как есть</option><option value="2">зеркально по горизонтали</option><option value="1">строки в обратном порядке (диагностика)</option><option value="3">оба</option></select>
+    <label>цвета (lut, hex)</label><input type="text" id="oLut" style="width:4em" value="27">
+    <button class="nc" id="bOdSet" disabled>Применить</button><button class="nc" id="bOdGet" disabled>Прочитать</button></div>
+  <div class="row"><small id="odInfo">Текущие значения читаются с метки. Ориентация и цвета применяются при рисовании, повторно загружать картинку не нужно.</small></div>
+</div>
+
+<details class="card">
+  <summary>Для разработчиков</summary>
+  <div class="row"><button class="nc" data-c="02">Статус (02)</button><button class="nc" data-c="20">NFC: поиск (20)</button><button class="nc" data-c="26">NFC: регистры (26)</button><button class="nc" data-c="27">NFC: 60 с слушать (27)</button><button class="nc" data-c="46 00">Тест в слот 0 (46 00)</button></div>
+  <div class="row"><label>команда (hex, каждый байт — две цифры)</label><input type="text" id="raw" placeholder="30 00 05" class="nc" disabled><button class="nc" id="bRaw" disabled>Отправить</button></div>
+  <div class="row"><small>Слоты: 40 список, 41 ss стереть (FF — все), 45 ss показать, 46 ss тест, 47 ss проверить, 4D mode slot [lut] настройки. Полный список — firmware/n437/README.md.</small></div>
+</details>
+
+<div class="card">
+  <h2>Журнал</h2>
+  <div id="log"></div>
+  <div class="row" style="margin-top:6px"><button id="bClear">Очистить</button><button id="bCopy">Копировать</button><button id="bSave">Сохранить в файл</button></div>
+</div>
+</main>
+<script>
+/* ================= LZ codec (the firmware decodes this) ================= */
+/* LZ4 block encoder / decoder for the 437Q-N slot formats (offsets <= 2048), and the line XOR filter. Plain functions, no dependencies. */
+const LZ_WIN = 2048;
+
+function lzEncode(src, depth){
+  depth = depth || 48;
+  const n = src.length, HB = 14;
+  const head = new Int32Array(1 << HB).fill(-1), prev = new Int32Array(n).fill(-1);
+  let out = new Uint8Array(n + (n >> 7) + 64), o = 0;
+  const h4 = i => (Math.imul((src[i] | (src[i+1] << 8) | (src[i+2] << 16) | (src[i+3] << 24)), 2654435761) >>> (32 - HB));
+  const insert = i => { if (i + 4 <= n){ const h = h4(i); prev[i] = head[h]; head[h] = i; } };
+  function best(i){                                   // longest match at i within the window: [len, offset]
+    let bl = 0, bo = 0;
+    if (i + 4 > n) return [0, 0];
+    let p = head[h4(i)], d = depth;
+    const lim = n - i;
+    while (p >= 0 && d-- > 0){
+      const off = i - p;
+      if (off > LZ_WIN) break;
+      if (src[p] === src[i] && src[p + bl] === src[i + bl]){
+        let l = 0;
+        while (l < lim && src[p + l] === src[i + l]) l++;
+        if (l > bl){ bl = l; bo = off; if (l === lim) break; }
+      }
+      p = prev[p];
+    }
+    return bl >= 4 ? [bl, bo] : [0, 0];
+  }
+  function put(b){ if (o >= out.length){ const t = new Uint8Array(out.length * 2); t.set(out); out = t; } out[o++] = b; }
+  function ext(v){ while (v >= 255){ put(255); v -= 255; } put(v); }
+  function seq(ls, le, ml, off){                      // literals src[ls..le), then a match of ml bytes at offset off (ml = 0: last sequence)
+    const ll = le - ls;
+    put((Math.min(ll, 15) << 4) | (ml ? Math.min(ml - 4, 15) : 0));
+    if (ll >= 15) ext(ll - 15);
+    for (let k = ls; k < le; k++) put(src[k]);
+    if (ml){ put(off & 255); put(off >> 8); if (ml - 4 >= 15) ext(ml - 4 - 15); }
+  }
+  let i = 0, anchor = 0;
+  while (i < n){
+    let [l, off] = best(i);
+    if (l){
+      if (i + 1 < n){                                 // lazy: a clearly longer match one byte later wins
+        insert(i);
+        const [l2] = best(i + 1);
+        if (l2 > l + 1){ i++; continue; }
+      } else insert(i);
+      seq(anchor, i, l, off);
+      for (let k = 1; k < l; k++) insert(i + k);
+      i += l; anchor = i;
+    } else { insert(i); i++; }
+  }
+  if (anchor < n) seq(anchor, n, 0, 0);               // no empty trailing token: the decoder stops when the frame is complete
+  return out.slice(0, o);
+}
+
+function lzDecode(st, outLen){
+  const out = new Uint8Array(outLen);
+  let i = 0, o = 0;
+  while (i < st.length){
+    const t = st[i++];
+    let ll = t >> 4, ml = t & 15;
+    if (ll === 15){ let x; do { x = st[i++]; ll += x; } while (x === 255); }
+    for (let k = 0; k < ll; k++){ if (o >= outLen) throw new Error("overflow"); out[o++] = st[i++]; }
+    if (i >= st.length) break;
+    const off = st[i] | (st[i + 1] << 8); i += 2;
+    if (off === 0 || off > LZ_WIN || off > o) throw new Error("bad offset");
+    if (ml === 15){ let x; do { x = st[i++]; ml += x; } while (x === 255); }
+    ml += 4;
+    for (let k = 0; k < ml; k++){ if (o >= outLen) throw new Error("overflow"); out[o] = out[o - off]; o++; }
+  }
+  if (o !== outLen) throw new Error("short " + o);
+  return out;
+}
+
+function xorLines(f, lb){ const o = new Uint8Array(f.length); for (let i = 0; i < f.length; i++) o[i] = f[i] ^ (i >= lb ? f[i - lb] : 0); return o; }
+function unxorLines(f, lb){ const o = new Uint8Array(f.length); for (let i = 0; i < f.length; i++) o[i] = f[i] ^ (i >= lb ? o[i - lb] : 0); return o; }
+
+/* the smallest of: raw (0), LZ (1), LZ of the line-XORed frame (2); returns {fmt, data} and verifies the round trip */
+function packFrame(frame){
+  let best = { fmt: 0, data: frame };
+  for (const fmt of [1, 2]){
+    const s = lzEncode(fmt === 2 ? xorLines(frame, 44) : frame);
+    if (s.length < best.data.length){
+      const back = lzDecode(s, frame.length), ok = (fmt === 2 ? unxorLines(back, 44) : back).every((v, k) => v === frame[k]);
+      if (ok) best = { fmt, data: s };
+    }
+  }
+  return best;
+}
+
+/* ================= picture -> 4 colours -> frame (pure functions, tested in Node) ================= */
+const W = 176, H = 480, LB = 44, FRAME_LEN = 21120;
+const PAL = [[255,255,255],[0,0,0],[200,30,30],[235,200,20]];        // palette index: white, black, red, yellow (nominal colours; the panel is not calibrated yet)
+const OD = [1, 0, 3, 2];                                              // palette index -> OpenDisplay code (black 0, white 1, yellow 2, red 3)
+const BAYER8 = [0,32,8,40,2,34,10,42, 48,16,56,24,50,18,58,26, 12,44,4,36,14,46,6,38, 60,28,52,20,62,30,54,22,
+                3,35,11,43,1,33,9,41, 51,19,59,27,49,17,57,25, 15,47,7,39,13,45,5,37, 63,31,55,23,61,29,53,21];
+
+function crc32(d){
+  let t = crc32.t;
+  if (!t){ t = crc32.t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } }
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < d.length; i++) c = t[(c ^ d[i]) & 255] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+/* RGBA (W*H*4) -> float RGB (W*H*3) with brightness / contrast (-60..60 each) applied */
+function prepare(rgba, bri, con){
+  const f = new Float32Array(W * H * 3);
+  const c = con * 2.55, k = (259 * (c + 255)) / (255 * (259 - c)), b = bri * 2.55;
+  for (let i = 0, j = 0; i < W * H; i++, j += 3){
+    for (let ch = 0; ch < 3; ch++){
+      const v = rgba[i * 4 + ch], a = rgba[i * 4 + 3] / 255;
+      const m = v * a + 255 * (1 - a);                                // transparent = white
+      f[j + ch] = Math.max(0, Math.min(255, k * (m - 128) + 128 + b));
+    }
+  }
+  return f;
+}
+
+function nearest(r, g, b){
+  let bi = 0, bd = 1e18;
+  for (let c = 0; c < 4; c++){
+    const dr = r - PAL[c][0], dg = g - PAL[c][1], db = b - PAL[c][2], d = dr * dr + dg * dg + db * db;
+    if (d < bd){ bd = d; bi = c; }
+  }
+  return bi;
+}
+
+/* f: float RGB from prepare(); mode: fs | atk | bay | none; result: palette index per pixel (row-major, W x H) */
+function quantize(f, mode){
+  const idx = new Uint8Array(W * H);
+  if (mode === "none"){
+    for (let p = 0; p < W * H; p++) idx[p] = nearest(f[p*3], f[p*3+1], f[p*3+2]);
+    return idx;
+  }
+  if (mode === "bay"){
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){
+      const p = y * W + x, t = (BAYER8[(y & 7) * 8 + (x & 7)] + 0.5) / 64 - 0.5, s = 110 * t;
+      idx[p] = nearest(f[p*3] + s, f[p*3+1] + s, f[p*3+2] + s);
+    }
+    return idx;
+  }
+  const w = new Float32Array(f);
+  const fs = mode === "fs";
+  const push = (x, y, er, eg, eb, k) => { if (x < 0 || x >= W || y >= H) return; const q = (y * W + x) * 3; w[q] += er * k; w[q+1] += eg * k; w[q+2] += eb * k; };
+  for (let y = 0; y < H; y++){
+    const ltr = !fs || (y & 1) === 0, dx = ltr ? 1 : -1;
+    for (let kx = 0; kx < W; kx++){
+      const x = ltr ? kx : W - 1 - kx, p = y * W + x;
+      const r = w[p*3], g = w[p*3+1], b = w[p*3+2];
+      const c = nearest(r, g, b);
+      idx[p] = c;
+      const cl = v => Math.max(-96, Math.min(96, v));                 // keep the error bounded for colours the panel cannot reach
+      const er = cl(r - PAL[c][0]), eg = cl(g - PAL[c][1]), eb = cl(b - PAL[c][2]);
+      if (fs){
+        push(x + dx, y, er, eg, eb, 7/16); push(x - dx, y + 1, er, eg, eb, 3/16); push(x, y + 1, er, eg, eb, 5/16); push(x + dx, y + 1, er, eg, eb, 1/16);
+      } else {                                                        // Atkinson: only 6/8 of the error is passed on
+        push(x + 1, y, er, eg, eb, 1/8); push(x + 2, y, er, eg, eb, 1/8);
+        push(x - 1, y + 1, er, eg, eb, 1/8); push(x, y + 1, er, eg, eb, 1/8); push(x + 1, y + 1, er, eg, eb, 1/8); push(x, y + 2, er, eg, eb, 1/8);
+      }
+    }
+  }
+  return idx;
+}
+
+/* palette indices -> the slot frame: 480 lines of 44 bytes, 4 pixels per byte, first pixel in bits 7..6, OpenDisplay codes */
+function toFrame(idx){
+  const out = new Uint8Array(FRAME_LEN);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) out[y * LB + (x >> 2)] |= OD[idx[y * W + x]] << (6 - 2 * (x & 3));
+  return out;
+}
+const sectorsFor = len => Math.ceil((256 + len) / 4096);
+
+/* ================= Bluetooth, log, slots ================= */
+const SVC = 0x2446, CHR = 0x2446;
+const $ = id => document.getElementById(id);
+const logEl = $("log");
+let dev = null, chr = null, buf = "", plain = "";
+let frame = null, packed = null, upAbort = false, upBusy = false, slots = [], slotTmp = [], fwInfo = null, odCfg = null, fwOk = true;
+const upq = []; let upw = null;
+
+function ts(){ const d = new Date(); return d.toTimeString().slice(0, 8) + "." + String(d.getMilliseconds()).padStart(3, "0"); }
+function add(text, cls){
+  const line = ts() + "  " + text;
+  plain += line + "\n";
+  const s = document.createElement("div");
+  if (cls) s.className = cls;
+  s.textContent = line;
+  const stick = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 30;
+  logEl.appendChild(s);
+  if (stick) logEl.scrollTop = logEl.scrollHeight;
+}
+const connected = () => !!(chr && dev && dev.gatt && dev.gatt.connected);
+function setState(on, txt){
+  $("st").textContent = txt;
+  $("bConn").disabled = on;
+  $("bDisc").disabled = !on;
+  document.querySelectorAll(".nc,[data-c]").forEach(b => b.disabled = !on);
+  refreshUp();
+}
+setState(false, "не подключено");
+
+const hx = a => Array.from(a).map(b => b.toString(16).padStart(2, "0")).join(" ");
+const h2 = n => (n & 255).toString(16).padStart(2, "0");
+const le32 = v => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
+function parseHex(s){
+  const t = s.replace(/[^0-9a-fA-F]/g, "");
+  if (!t.length || t.length % 2) throw new Error("нужно чётное число hex-цифр");
+  const out = [];
+  for (let i = 0; i < t.length; i += 2) out.push(parseInt(t.substr(i, 2), 16));
+  if (out.length > 20) throw new Error("не больше 20 байт");
+  return Uint8Array.from(out);
+}
+
+function onNotify(ev){
+  const v = ev.target.value;
+  const bytes = new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
+  if (!buf.length && bytes.length >= 2 && (bytes[0] === 0x00 || bytes[0] === 0xFF)) return;     // OpenDisplay reply: not used by this page
+  for (const b of bytes){
+    if (b === 10){ if (buf.length){ add(buf); lineHook(buf); } buf = ""; }
+    else if (b === 13) {}
+    else if (b >= 32 && b < 127) buf += String.fromCharCode(b);
+    else buf += "\\x" + b.toString(16).padStart(2, "0");
+  }
+}
+
+async function connect(){
+  if (!navigator.bluetooth){ add("Web Bluetooth недоступен в этом браузере", "sys"); return; }
+  try{
+    const all = $("showAll").checked;
+    dev = await navigator.bluetooth.requestDevice(all ? {acceptAllDevices: true, optionalServices: [SVC]} : {filters: [{namePrefix: "OD"}], optionalServices: [SVC]});
+    dev.addEventListener("gattserverdisconnected", () => {
+      if (buf.length){ add(buf); buf = ""; }
+      add("— связь потеряна —", "sys");
+      setState(false, "не подключено");
+    });
+    setState(false, "подключение…");
+    const srv = await dev.gatt.connect();
+    const svc = await srv.getPrimaryService(SVC);
+    chr = await svc.getCharacteristic(CHR);
+    chr.addEventListener("characteristicvaluechanged", onNotify);
+    await chr.startNotifications();
+    setState(true, "подключено: " + dev.name);
+    add("— подключено к " + dev.name + " —", "sys");
+    fwInfo = null; renderFw();
+    send("02").catch(() => {});
+    setTimeout(() => { if (connected()) send("40").catch(() => {}); }, 500);
+    setTimeout(() => { if (connected()) send("4D").catch(() => {}); }, 1000);
+    setTimeout(() => { if (!fwInfo){ fwInfo = {ver: "?", old: true}; renderFw(); } }, 4000);
+  }catch(e){
+    add("ошибка: " + e.message, "sys");
+    setState(false, "не подключено");
+  }
+}
+
+async function send(s, strict){
+  if (!chr){ add("нет соединения", "sys"); if (strict) throw new Error("нет соединения"); return; }
+  try{
+    const a = typeof s === "string" ? parseHex(s) : s;
+    add("→ " + hx(a), "tx");
+    if (chr.writeValueWithoutResponse) await chr.writeValueWithoutResponse(a); else await chr.writeValue(a);
+  }catch(e){ add("ошибка отправки: " + e.message, "sys"); if (strict) throw e; }
+}
+
+function renderFw(){
+  const w = $("fwWarn");
+  let msg = "";
+  if (fwInfo){
+    const m = /^437-(\d+)\.(\d+)/.exec(fwInfo.ver);
+    if (!m || +m[1] === 0 && +m[2] < 5) msg = "Прошивка метки (" + fwInfo.ver + ") старше 0.5: слоты фиксированные и сжатие не поддерживается. Загрузка будет отключена; обновите прошивку.";
+  }
+  w.textContent = msg; w.hidden = !msg;
+  fwOk = !msg;
+  refreshUp();
+}
+function lineHook(t){
+  let m;
+  if ((m = /^STATUS fw (\S+)/.exec(t))){ fwInfo = {ver: m[1]}; renderFw(); }
+  if ((m = /^OD mode=(\d+) slot=(\d+) lut=([0-9A-Fa-f]+)/.exec(t))){
+    odCfg = {mode: +m[1], slot: +m[2], lut: m[3].toUpperCase()};
+    $("oMode").value = String(odCfg.mode); $("oLut").value = odCfg.lut;
+  }
+  if ((m = /^slot (\d+): fmt (\d), (\d+) bytes, (\d+) sectors, crc=([0-9A-F]+)/.exec(t))) slotTmp.push({n: +m[1], fmt: +m[2], len: +m[3], sect: +m[4], crc: m[5]});
+  if ((m = /^slots: (\d+) used, (\d+) of (\d+) sectors free, largest run (\d+), max (\d+) slots/.exec(t))){
+    slots = slotTmp; slotTmp = [];
+    renderSlots({used: +m[1], free: +m[2], total: +m[3], big: +m[4], max: +m[5]});
+  }
+  if (!/^(UP |LINK |slot )/.test(t)) return;
+  upq.push(t);
+  if (upq.length > 200) upq.shift();
+  if (upw){ const w = upw; upw = null; w(); }
+}
+
+const FMT_NAME = ["без сжатия", "LZ", "LZ + строки"];
+function renderSlots(sum){
+  const tb = $("slotRows");
+  tb.textContent = "";
+  if (!slots.length){ const tr = tb.insertRow(); const td = tr.insertCell(); td.colSpan = 5; td.innerHTML = "<small>слотов нет</small>"; }
+  slots.sort((a, b) => a.n - b.n).forEach(s => {
+    const tr = tb.insertRow();
+    tr.insertCell().textContent = s.n;
+    tr.insertCell().textContent = FMT_NAME[s.fmt] || s.fmt;
+    tr.insertCell().textContent = (s.len / 1024).toFixed(1) + " КБ";
+    tr.insertCell().textContent = s.sect;
+    const td = tr.insertCell();
+    for (const [lbl, cmd, cls] of [["показать", 0x45, ""], ["проверить", 0x47, ""], ["стереть", 0x41, "danger"]]){
+      const b = document.createElement("button"); b.className = "sm " + cls; b.textContent = lbl;
+      b.onclick = async () => { await send(Uint8Array.from([cmd, s.n])); if (cmd === 0x41) setTimeout(() => send("40"), 1500); };
+      td.appendChild(b); td.appendChild(document.createTextNode(" "));
+    }
+  });
+  $("free").innerHTML = "<small>занято слотов: " + sum.used + " из " + sum.max + ", свободно секторов: " + sum.free + " из " + sum.total + " (наибольший кусок " + sum.big + ")</small>";
+  fillSlotSelect();
+}
+function fillSlotSelect(){
+  const sel = $("slot"), keep = sel.value;
+  sel.textContent = "";
+  const used = new Set(slots.map(s => s.n));
+  let firstFree = -1;
+  for (let i = 0; i < 24; i++){
+    const o = document.createElement("option"); o.value = i; o.textContent = i + (used.has(i) ? " (занят, будет заменён)" : "");
+    sel.appendChild(o);
+    if (firstFree < 0 && !used.has(i)) firstFree = i;
+  }
+  sel.value = sel.dataset.touched && keep !== "" ? keep : String(firstFree < 0 ? 0 : firstFree);
+}
+$("slot").onchange = () => { $("slot").dataset.touched = "1"; };
+fillSlotSelect();
+
+function nextUp(ms){
+  return new Promise((res, rej) => {
+    const tick = () => {
+      if (upq.length) return res(upq.shift());
+      const timer = setTimeout(() => { upw = null; rej(new Error("нет ответа от метки")); }, ms);
+      upw = () => { clearTimeout(timer); tick(); };
+    };
+    tick();
+  });
+}
+async function nextUpLine(re, ms){
+  const end = Date.now() + ms;
+  for (;;){
+    const t = await nextUp(Math.max(100, end - Date.now()));
+    if (/^UP FAIL/.test(t) || /^slot \d+: no room/.test(t)) throw new Error(t);
+    if (re.test(t)) return t;
+    if (Date.now() > end) throw new Error("нет ответа от метки");
+  }
+}
+
+function refreshUp(){
+  $("bUp").disabled = !(connected() && frame && packed && fwOk) || upBusy;
+  $("bUpStop").disabled = !upBusy;
+}
+
+async function upload(slot, p){
+  upBusy = true; upAbort = false; refreshUp();
+  upq.length = 0;
+  const data = p.data, prog = $("prog"), info = $("upinfo");
+  prog.value = 0;
+  try{
+    const crc = crc32(data);
+    info.textContent = "Метка готовит место…";
+    const win = 8;
+    await send(Uint8Array.from([0x42, slot, ...le32(data.length), ...le32(crc), win, p.fmt]), true);
+    const rdy = await nextUpLine(/^UP READY/, 90000);
+    const chunk = +/chunk=(\d+)/.exec(rdy)[1], w = +/win=(\d+)/.exec(rdy)[1];
+    const noResp = $("wmode").value === "nr" && chr.writeValueWithoutResponse;
+    add("загрузка: чанк " + chunk + " Б, окно " + w + ", " + (noResp ? "без подтверждения" : "с подтверждением"), "sys");
+    let off = 0, seq = 0, since = 0;
+    const t0 = performance.now();
+    while (off < data.length){
+      if (upAbort) throw new Error("прервано");
+      const n = Math.min(chunk, data.length - off);
+      const pkt = new Uint8Array(3 + n);
+      pkt[0] = 0x43; pkt[1] = seq & 255; pkt[2] = seq >> 8;
+      pkt.set(data.subarray(off, off + n), 3);
+      if (noResp) await chr.writeValueWithoutResponse(pkt); else if (chr.writeValueWithResponse) await chr.writeValueWithResponse(pkt); else await chr.writeValue(pkt);
+      off += n; seq++; since++;
+      if (since >= w || off >= data.length){
+        since = 0;
+        const a = await nextUpLine(/^UP ACK/, 15000);
+        if (+a.slice(7) !== off) throw new Error("неверное подтверждение: " + a);
+        prog.value = 100 * off / data.length;
+        const sec = (performance.now() - t0) / 1000;
+        info.textContent = Math.round(off / 1024 * 10) / 10 + " из " + Math.round(data.length / 1024 * 10) / 10 + " КБ, " + (off / 1024 / sec).toFixed(1) + " КБ/с";
+      }
+    }
+    await send(Uint8Array.from([0x44]), true);
+    const ok = await nextUpLine(/^UP OK/, 30000);
+    info.textContent = "Загружено за " + ((performance.now() - t0) / 1000).toFixed(1) + " с. " + ok + ". Теперь можно нажать «показать» в списке слотов.";
+    prog.value = 100;
+    setTimeout(() => send("40"), 300);
+  }catch(e){
+    add("загрузка не удалась: " + e.message, "sys");
+    info.textContent = "Не удалось: " + e.message;
+    try{ await send(Uint8Array.from([0x49])); }catch(_){}
+  }finally{
+    upBusy = false; refreshUp();
+  }
+}
+
+/* ================= picture ================= */
+let srcImg = null, renderT = 0;
+function schedule(){ clearTimeout(renderT); renderT = setTimeout(render, 60); }
+function render(){
+  if (!srcImg) return;
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d", {willReadFrequently: true});
+  g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+  const rot = +$("rot").value, fit = $("fit").value, sw0 = srcImg.naturalWidth || srcImg.width, sh0 = srcImg.naturalHeight || srcImg.height;
+  const sw = rot % 180 ? sh0 : sw0, sh = rot % 180 ? sw0 : sh0;
+  let dw = W, dh = H;
+  if (fit !== "stretch"){ const k = fit === "cover" ? Math.max(W / sw, H / sh) : Math.min(W / sw, H / sh); dw = sw * k; dh = sh * k; }
+  const iw = rot % 180 ? dh : dw, ih = rot % 180 ? dw : dh;
+  g.translate(W / 2, H / 2); g.rotate(rot * Math.PI / 180);
+  g.imageSmoothingQuality = "high";
+  g.drawImage(srcImg, -iw / 2, -ih / 2, iw, ih);
+  const idx = quantize(prepare(g.getImageData(0, 0, W, H).data, +$("bri").value, +$("con").value), $("dith").value);
+  const pv = $("prev").getContext("2d"), im = pv.createImageData(W, H);
+  for (let i = 0; i < W * H; i++){ const p = PAL[idx[i]]; im.data[i*4] = p[0]; im.data[i*4+1] = p[1]; im.data[i*4+2] = p[2]; im.data[i*4+3] = 255; }
+  pv.putImageData(im, 0, 0);
+  frame = toFrame(idx);
+  packed = packFrame(frame);
+  const pct = Math.round(100 * packed.data.length / FRAME_LEN);
+  $("upinfo").textContent = "К загрузке: " + FMT_NAME[packed.fmt] + ", " + (packed.data.length / 1024).toFixed(1) + " КБ из 20.6 КБ (" + pct + " %), займёт " + sectorsFor(packed.data.length) + " из 78 секторов.";
+  $("prog").value = 0;
+  refreshUp();
+}
+["fit", "rot", "dith", "bri", "con"].forEach(id => $(id).addEventListener("input", schedule));
+$("file").onchange = () => {
+  const f = $("file").files[0];
+  if (!f) return;
+  const img = new Image();
+  img.onload = () => { srcImg = img; render(); };
+  img.onerror = () => add("не удалось прочитать картинку", "sys");
+  img.src = URL.createObjectURL(f);
+};
+
+/* ================= buttons ================= */
+$("bConn").onclick = connect;
+$("bDisc").onclick = () => { if (dev && dev.gatt.connected) dev.gatt.disconnect(); };
+$("bList").onclick = () => send("40");
+$("bEraseAll").onclick = () => { if (confirm("Стереть все слоты?")){ send("41 ff"); setTimeout(() => send("40"), 6000); } };
+$("bUp").onclick = () => { if (frame && packed) upload(+$("slot").value, packed); };
+$("bUpStop").onclick = () => { upAbort = true; };
+$("bOdGet").onclick = () => send("4D");
+$("bOdSet").onclick = () => {
+  const lut = parseInt($("oLut").value || "27", 16) & 255;
+  send(Uint8Array.from([0x4D, +$("oMode").value, odCfg ? odCfg.slot : 0, lut]));
+};
+document.querySelectorAll("[data-c]").forEach(b => b.onclick = () => send(b.dataset.c));
+$("bRaw").onclick = () => send($("raw").value);
+$("raw").addEventListener("keydown", e => { if (e.key === "Enter") $("bRaw").click(); });
+$("bClear").onclick = () => { logEl.textContent = ""; plain = ""; };
+$("bCopy").onclick = async () => { try{ await navigator.clipboard.writeText(plain); add("лог скопирован", "sys"); }catch(e){ add("не удалось скопировать: " + e.message, "sys"); } };
+$("bSave").onclick = () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([plain], {type: "text/plain"}));
+  a.download = "badge437-log-" + new Date().toISOString().replace(/[:.]/g, "-") + ".txt";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+</script>
+</body>
+</html>
