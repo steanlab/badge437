@@ -113,6 +113,16 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="row"><small id="modeInfo">Автономный: метка спит и включает Bluetooth только на время после касания телефоном и после включения питания; слайдшоу идёт само. OpenDisplay: Bluetooth включён всегда (Home Assistant, веб-инструмент OpenDisplay), расход выше. При смене режима метка перезагружается; вернуться можно приложив телефон к метке или переподключив питание.</small></div>
 </div>
 
+<details class="card" id="otaCard">
+  <summary>Обновление прошивки по Bluetooth (OTA)</summary>
+  <div class="row"><small id="otaNow">Текущая прошивка метки появится после подключения.</small></div>
+  <div class="row"><label>файл прошивки (.bin)</label><input type="file" id="fwFile" accept=".bin" class="nc" disabled></div>
+  <div class="row"><small id="otaFile">Файл не выбран. Нужен образ, который собирает build.sh (имя вида n437_0.8.bin, до 124 КБ).</small></div>
+  <div class="row"><button class="nc" id="bFwUp" disabled>Загрузить в метку</button><button class="nc" id="bFwGo" disabled>Переключиться на новую</button></div>
+  <progress id="otaProg" max="100" value="0"></progress>
+  <div class="row"><small>Образ пишется во второй образ флеша; рабочая прошивка при этом не меняется. Метка сама проверяет заголовок, CRC и что это прошивка для 437. Переключение ставит флаг загрузки и перезапускает метку. Не выключайте питание во время загрузки. Если новая прошивка не стартует, поможет только программатор (Pico).</small></div>
+</details>
+
 <details class="card">
   <summary>Для разработчиков</summary>
   <div class="row"><button class="nc" data-c="02">Статус (02)</button><button class="nc" data-c="20">NFC: поиск (20)</button><button class="nc" data-c="26">NFC: регистры (26)</button><button class="nc" data-c="27">NFC: 60 с слушать (27)</button><button class="nc" data-c="2c 00 00 80">NFC: память (2C)</button><button class="nc" data-c="2d">NFC: обновить запись (2D)</button><button class="nc" data-c="46 00">Тест в слот 0 (46 00)</button></div>
@@ -352,6 +362,23 @@ const EN = {
   "Применить": "Apply",
   "Прочитать": "Read",
   "Текущие значения читаются с метки. Ориентация и цвета применяются при рисовании, повторно загружать картинку не нужно.": "The current values are read from the tag. Orientation and colours are applied when drawing, the picture does not have to be uploaded again.",
+  "Обновление прошивки по Bluetooth (OTA)": "Firmware update over Bluetooth (OTA)",
+  "Текущая прошивка метки появится после подключения.": "The tag's firmware will show here after connecting.",
+  "файл прошивки (.bin)": "firmware file (.bin)",
+  "Файл не выбран. Нужен образ, который собирает build.sh (имя вида n437_0.8.bin, до 124 КБ).": "No file chosen. It must be the image that build.sh makes (a name like n437_0.8.bin, up to 124 KB).",
+  "Загрузить в метку": "Upload to the tag",
+  "Переключиться на новую": "Switch to the new one",
+  "Образ пишется во второй образ флеша; рабочая прошивка при этом не меняется. Метка сама проверяет заголовок, CRC и что это прошивка для 437. Переключение ставит флаг загрузки и перезапускает метку. Не выключайте питание во время загрузки. Если новая прошивка не стартует, поможет только программатор (Pico).": "The image is written into the second firmware image area of the flash; the running firmware is not touched. The tag checks the header, the CRC and that it is a firmware for the 437. Switching sets the boot flag and restarts the tag. Do not cut the power during the upload. If the new firmware does not start, only the programmer (Pico) helps.",
+  "метка переключилась на новую прошивку и перезапускается: подключитесь снова (окно после включения питания)": "the tag switched to the new firmware and restarts: connect again (the window after power-up)",
+  "Сейчас в метке: {0}, образ {1}.": "In the tag now: {0}, image {1}.",
+  "размер вне 16..124 КБ": "size outside 16..124 KB",
+  "нет заголовка KNLT: это не образ Telink": "no KNLT header: not a Telink image",
+  "длина в заголовке не совпадает с размером файла": "the length in the header does not match the file size",
+  "в образе нет строки «N437 fw 437-…»: это не прошивка для этой метки": "the image has no \"N437 fw 437-...\" text: not a firmware for this tag",
+  "Файл: {0}, {1} байт, CRC-32 {2}.": "File: {0}, {1} bytes, CRC-32 {2}.",
+  "Файл не подходит: ": "The file does not fit: ",
+  "Загружено и проверено за {0} с: {1}. Можно переключаться.": "Uploaded and verified in {0} s: {1}. You can switch now.",
+  "Переключиться на прошивку {0}? Метка перезапустится. Если новая прошивка не запустится, восстановить метку можно только программатором.": "Switch to firmware {0}? The tag restarts. If the new firmware does not start, only the programmer can recover the tag.",
   "Режим работы": "Operating mode",
   "режим": "mode",
   "Автономный (по умолчанию, экономит батарею)": "Standalone (default, saves the battery)",
@@ -407,7 +434,7 @@ const EN = {
   "Загружено за {0} с. {1}. Теперь можно нажать «показать» в списке слотов.": "Uploaded in {0} s. {1}. Now press “show” in the slot list.",
   "загрузка не удалась: ": "upload failed: ",
   "Не удалось: ": "Failed: ",
-  "К загрузке: {0}, {1} КБ из 20.6 КБ ({2} %), займёт {3} из 78 секторов.": "To upload: {0}, {1} KB of 20.6 KB ({2} %), takes {3} of 78 sectors.",
+  "К загрузке: {0}, {1} КБ из 20.6 КБ ({2} %), займёт {3} из {4} секторов.": "To upload: {0}, {1} KB of 20.6 KB ({2} %), takes {3} of {4} sectors.",
   "не удалось прочитать картинку": "could not read the picture",
   "лог скопирован": "log copied",
   "не удалось скопировать: ": "could not copy: "
@@ -439,6 +466,7 @@ const SVC = 0x2446, CHR = 0x2446;
 const $ = id => document.getElementById(id);
 const logEl = $("log");
 let dev = null, chr = null, buf = "", plain = "";
+let otaImg = null, otaStaged = null, curImg = null;
 let frame = null, packed = null, upAbort = false, upBusy = false, slots = [], slotTmp = [], fwInfo = null, odCfg = null, fwOk = true;
 const upq = []; let upw = null;
 
@@ -462,6 +490,7 @@ function setState(on, key, extra){
   $("bDisc").disabled = !on;
   document.querySelectorAll(".nc,[data-c]").forEach(b => b.disabled = !on);
   refreshUp();
+  if (typeof renderOta === "function") renderOta();
 }
 setState(false, "не подключено");
 
@@ -536,12 +565,16 @@ function renderFw(){
   }
   { const mm = fwInfo && /^437-(\d+)\.(\d+)/.exec(fwInfo.ver); $("modeCard").hidden = !!(mm && +mm[1] === 0 && +mm[2] < 7); }	/* the mode switch exists from 0.7 */
   w.textContent = msg; w.hidden = !msg;
+  renderOta();
   fwOk = !msg;
   refreshUp();
 }
 function lineHook(t){
   let m;
   if ((m = /^STATUS fw (\S+)/.exec(t))){ fwInfo = {ver: m[1]}; renderFw(); }
+  if ((m = /^STATE .* img=(\S)/.exec(t))){ curImg = m[1]; renderOta(); }
+  if ((m = /^OTA STAGED (\S+) (\d+) bytes/.exec(t))){ otaStaged = m[1]; renderOta(); }
+  if ((m = /^OTA (DONE|HALF-DONE)/.exec(t))){ otaStaged = null; add(T("метка переключилась на новую прошивку и перезапускается: подключитесь снова (окно после включения питания)"), "sys"); renderOta(); }
   if ((m = /^STATE mode=(\d) radio=(\d) wt=(\d+) wb=(\d+)/.exec(t)) || (m = /^SYS .* mode=(\d) wt=(\d+) wb=(\d+)/.exec(t))){
     const w = m.length === 5 ? [m[3], m[4]] : [m[2], m[3]];
     $("mMode").value = m[1]; $("mTap").value = w[0]; $("mBoot").value = w[1];
@@ -555,7 +588,7 @@ function lineHook(t){
     slots = slotTmp; slotTmp = [];
     renderSlots({used: +m[1], free: +m[2], total: +m[3], big: +m[4], max: +m[5]});
   }
-  if (!/^(UP |LINK |slot )/.test(t)) return;
+  if (!/^(UP |LINK |slot |OTA )/.test(t)) return;
   upq.push(t);
   if (upq.length > 200) upq.shift();
   if (upw){ const w = upw; upw = null; w(); }
@@ -613,7 +646,7 @@ async function nextUpLine(re, ms){
   const end = Date.now() + ms;
   for (;;){
     const t = await nextUp(Math.max(100, end - Date.now()));
-    if (/^UP FAIL/.test(t) || /^slot \d+: no room/.test(t)) throw new Error(t);
+    if (/^UP FAIL/.test(t) || /^OTA FAIL/.test(t) || /^slot \d+: no room/.test(t)) throw new Error(t);
     if (re.test(t)) return t;
     if (Date.now() > end) throw new Error(T("нет ответа от метки"));
   }
@@ -624,10 +657,11 @@ function refreshUp(){
   $("bUpStop").disabled = !upBusy;
 }
 
-async function upload(slot, p){
+async function upload(slot, p, ui){
+  ui = ui || {};
   upBusy = true; upAbort = false; refreshUp();
   upq.length = 0;
-  const data = p.data, prog = $("prog"), info = $("upinfo");
+  const data = p.data, prog = ui.prog || $("prog"), info = ui.info || $("upinfo");
   prog.value = 0;
   try{
     const crc = crc32(data);
@@ -658,13 +692,14 @@ async function upload(slot, p){
       }
     }
     await send(Uint8Array.from([0x44]), true);
-    const ok = await nextUpLine(/^UP OK/, 30000);
-    info.textContent = T("Загружено за {0} с. {1}. Теперь можно нажать «показать» в списке слотов.", ((performance.now() - t0) / 1000).toFixed(1), ok);
+    const ok = await nextUpLine(ui.okRe || /^UP OK/, 60000);
     prog.value = 100;
-    setTimeout(() => send("40"), 300);
+    if (ui.done) ui.done(ok, (performance.now() - t0) / 1000);
+    else { info.textContent = T("Загружено за {0} с. {1}. Теперь можно нажать «показать» в списке слотов.", ((performance.now() - t0) / 1000).toFixed(1), ok); setTimeout(() => send("40"), 300); }
   }catch(e){
     add(T("загрузка не удалась: ") + e.message, "sys");
     info.textContent = T("Не удалось: ") + e.message;
+    if (ui.fail) ui.fail(e);
     try{ await send(Uint8Array.from([0x49])); }catch(_){}
   }finally{
     upBusy = false; refreshUp();
@@ -694,7 +729,7 @@ function render(){
   frame = toFrame(idx);
   packed = packFrame(frame);
   const pct = Math.round(100 * packed.data.length / FRAME_LEN);
-  $("upinfo").textContent = T("К загрузке: {0}, {1} КБ из 20.6 КБ ({2} %), займёт {3} из 78 секторов.", T(FMT_NAME[packed.fmt]), (packed.data.length / 1024).toFixed(1), pct, sectorsFor(packed.data.length));
+  $("upinfo").textContent = T("К загрузке: {0}, {1} КБ из 20.6 КБ ({2} %), займёт {3} из {4} секторов.", T(FMT_NAME[packed.fmt]), (packed.data.length / 1024).toFixed(1), pct, sectorsFor(packed.data.length), lastSum ? lastSum.total : 51);
   $("prog").value = 0;
   refreshUp();
 }
@@ -715,6 +750,51 @@ $("bList").onclick = () => send("40");
 $("bEraseAll").onclick = () => { if (confirm(T("Стереть все слоты?"))){ send("41 ff"); setTimeout(() => send("40"), 6000); } };
 $("bUp").onclick = () => { if (frame && packed) upload(+$("slot").value, packed); };
 $("bUpStop").onclick = () => { upAbort = true; };
+/* ---- OTA ---- */
+function renderOta(){
+  const mm = fwInfo && /^437-(\d+)\.(\d+)/.exec(fwInfo.ver);
+  $("otaCard").hidden = !!(mm && +mm[1] === 0 && +mm[2] < 8);		/* OTA exists from 0.8 */
+  $("otaNow").textContent = fwInfo ? T("Сейчас в метке: {0}, образ {1}.", fwInfo.ver, curImg || "?") : T("Текущая прошивка метки появится после подключения.");
+  $("bFwUp").disabled = !(connected() && otaImg && otaImg.ok) || upBusy;
+  $("bFwGo").disabled = !(connected() && otaStaged) || upBusy;
+}
+function otaParse(buf){
+  const d = new Uint8Array(buf), r = {ok: false, len: d.length, data: d, why: ""};
+  const dv = new DataView(buf);
+  if (d.length < 0x4000 || d.length > 0x1F000) r.why = T("размер вне 16..124 КБ");
+  else if (!(d[8] === 0x4B && d[9] === 0x4E && d[10] === 0x4C && d[11] === 0x54)) r.why = T("нет заголовка KNLT: это не образ Telink");
+  else if (dv.getUint32(0x18, true) !== d.length) r.why = T("длина в заголовке не совпадает с размером файла");
+  else {
+    const key = "N437 fw "; let at = -1;
+    outer: for (let i = 0; i + key.length + 12 < d.length; i++){ for (let k = 0; k < key.length; k++) if (d[i + k] !== key.charCodeAt(k)) continue outer; at = i + key.length; break; }
+    let ver = ""; if (at >= 0) for (let j = 0; j < 12 && d[at + j] > 32 && d[at + j] < 127; j++) ver += String.fromCharCode(d[at + j]);
+    if (!/^437-/.test(ver)) r.why = T("в образе нет строки «N437 fw 437-…»: это не прошивка для этой метки");
+    else { r.ok = true; r.ver = ver; r.crc = crc32(d); }
+  }
+  return r;
+}
+$("fwFile").onchange = async () => {
+  const f = $("fwFile").files[0]; otaImg = null; otaStaged = null;
+  if (f){
+    otaImg = otaParse(await f.arrayBuffer());
+    $("otaFile").textContent = otaImg.ok ? T("Файл: {0}, {1} байт, CRC-32 {2}.", otaImg.ver, otaImg.len, otaImg.crc.toString(16).toUpperCase().padStart(8, "0")) : T("Файл не подходит: ") + otaImg.why;
+  }
+  renderOta();
+};
+$("bFwUp").onclick = async () => {
+  if (!otaImg || !otaImg.ok) return;
+  otaStaged = null;
+  await upload(0xF0, {fmt: 0, data: otaImg.data}, {prog: $("otaProg"), info: $("otaFile"), okRe: /^OTA STAGED/,
+    done: (ok, sec) => { $("otaFile").textContent = T("Загружено и проверено за {0} с: {1}. Можно переключаться.", sec.toFixed(1), ok); },
+    fail: () => {}});
+  renderOta();
+};
+$("bFwGo").onclick = () => {
+  if (!otaStaged) return;
+  if (!confirm(T("Переключиться на прошивку {0}? Метка перезапустится. Если новая прошивка не запустится, восстановить метку можно только программатором.", otaStaged))) return;
+  send("4F 07 a5");
+};
+
 $("bModeGet").onclick = () => send("4F 03");
 $("bModeSet").onclick = () => {
   const clampW = v => Math.max(10, Math.min(250, Math.round(+v) || 60));
