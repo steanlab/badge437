@@ -49,6 +49,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="row">
     <button id="bConn" class="pri">Подключиться</button>
     <button id="bDisc" disabled>Отключиться</button>
+    <button id="bLang" class="sm" title="Language / Язык">EN</button>
     <label><input type="checkbox" id="showAll"> показать все устройства</label>
     <span id="st">не подключено</span>
   </div>
@@ -97,7 +98,7 @@ details.card[open]>summary{margin-bottom:8px}
 
 <details class="card">
   <summary>Для разработчиков</summary>
-  <div class="row"><button class="nc" data-c="02">Статус (02)</button><button class="nc" data-c="20">NFC: поиск (20)</button><button class="nc" data-c="26">NFC: регистры (26)</button><button class="nc" data-c="27">NFC: 60 с слушать (27)</button><button class="nc" data-c="46 00">Тест в слот 0 (46 00)</button></div>
+  <div class="row"><button class="nc" data-c="02">Статус (02)</button><button class="nc" data-c="20">NFC: поиск (20)</button><button class="nc" data-c="26">NFC: регистры (26)</button><button class="nc" data-c="27">NFC: 60 с слушать (27)</button><button class="nc" data-c="2c 00 00 80">NFC: память (2C)</button><button class="nc" data-c="2d">NFC: обновить запись (2D)</button><button class="nc" data-c="46 00">Тест в слот 0 (46 00)</button></div>
   <div class="row"><label>команда (hex, каждый байт — две цифры)</label><input type="text" id="raw" placeholder="30 00 05" class="nc" disabled><button class="nc" id="bRaw" disabled>Отправить</button></div>
   <div class="row"><small>Слоты: 40 список, 41 ss стереть (FF — все), 45 ss показать, 46 ss тест, 47 ss проверить, 4D mode slot [lut] настройки. Полный список — firmware/n437/README.md.</small></div>
 </details>
@@ -282,6 +283,129 @@ function toFrame(idx){
 }
 const sectorsFor = len => Math.ceil((256 + len) / 4096);
 
+/* ================= languages: Russian is the source text, English is looked up here ================= */
+const EN = {
+  "badge437 — консоль": "badge437 console",
+  "badge437 — консоль метки Hanshow Nebular Pro 437Q-N": "badge437: console for the Hanshow Nebular Pro 437Q-N tag",
+  "Подключиться": "Connect",
+  "Отключиться": "Disconnect",
+  "показать все устройства": "show all devices",
+  "не подключено": "not connected",
+  "подключение…": "connecting…",
+  "подключено: ": "connected: ",
+  "Нужен Chrome/Edge с Web Bluetooth. Имя метки: OD- и четыре символа MAC (например OD-6D2A).": "Needs Chrome/Edge with Web Bluetooth. The tag name is OD- plus four characters of the MAC (for example OD-6D2A).",
+  "Слайды в памяти метки": "Slides in the tag memory",
+  "Обновить список": "Refresh the list",
+  "№": "No.",
+  "формат": "format",
+  "размер": "size",
+  "секторов": "sectors",
+  "список ещё не получен": "the list has not been received yet",
+  "слотов нет": "no slots",
+  "Стереть все слоты": "Erase all slots",
+  "Стереть все слоты?": "Erase all slots?",
+  "Новая картинка": "New picture",
+  "вписать": "fit",
+  "заполнить (обрезать)": "fill (crop)",
+  "целиком (поля белые)": "whole picture (white margins)",
+  "растянуть": "stretch",
+  "поворот": "rotation",
+  "растр": "dithering",
+  "Флойд–Стейнберг (фото)": "Floyd–Steinberg (photos)",
+  "Аткинсон (гравюры, текст)": "Atkinson (engravings, text)",
+  "упорядоченный (сжимается лучше)": "ordered (compresses better)",
+  "без растра": "none",
+  "яркость": "brightness",
+  "контраст": "contrast",
+  "в слот": "to slot",
+  "Загрузить": "Upload",
+  "Прервать": "Abort",
+  "запись": "write mode",
+  "с подтверждением (надёжно)": "with acknowledgement (reliable)",
+  "без подтверждения (быстро)": "without acknowledgement (fast)",
+  "Выберите картинку: она приводится к 176×480 и четырём цветам (белый, чёрный, красный, жёлтый). Загружается самый короткий из трёх видов: без сжатия, LZ, LZ с вычитанием строк.": "Choose a picture: it is fitted to 176×480 and four colours (white, black, red, yellow). The shortest of three forms is uploaded: uncompressed, LZ, LZ with line subtraction.",
+  "Панель": "Panel",
+  "ориентация": "orientation",
+  "как есть": "as is",
+  "зеркально по горизонтали": "mirrored horizontally",
+  "строки в обратном порядке (диагностика)": "lines in reverse order (diagnostics)",
+  "оба": "both",
+  "цвета (lut, hex)": "colours (lut, hex)",
+  "Применить": "Apply",
+  "Прочитать": "Read",
+  "Текущие значения читаются с метки. Ориентация и цвета применяются при рисовании, повторно загружать картинку не нужно.": "The current values are read from the tag. Orientation and colours are applied when drawing, the picture does not have to be uploaded again.",
+  "Для разработчиков": "For developers",
+  "Статус (02)": "Status (02)",
+  "NFC: поиск (20)": "NFC: scan (20)",
+  "NFC: регистры (26)": "NFC: registers (26)",
+  "NFC: 60 с слушать (27)": "NFC: listen 60 s (27)",
+  "NFC: память (2C)": "NFC: memory (2C)",
+  "NFC: обновить запись (2D)": "NFC: rewrite the text record (2D)",
+  "Тест в слот 0 (46 00)": "Test picture to slot 0 (46 00)",
+  "команда (hex, каждый байт — две цифры)": "command (hex, two digits per byte)",
+  "Отправить": "Send",
+  "Слоты: 40 список, 41 ss стереть (FF — все), 45 ss показать, 46 ss тест, 47 ss проверить, 4D mode slot [lut] настройки. Полный список — firmware/n437/README.md.": "Slots: 40 list, 41 ss erase (FF = all), 45 ss show, 46 ss test, 47 ss verify, 4D mode slot [lut] settings. The full list is in firmware/n437/README.md.",
+  "Журнал": "Log",
+  "Очистить": "Clear",
+  "Копировать": "Copy",
+  "Сохранить в файл": "Save to a file",
+  // run time texts
+  "нужно чётное число hex-цифр": "an even number of hex digits is needed",
+  "не больше 20 байт": "at most 20 bytes",
+  "Web Bluetooth недоступен в этом браузере": "Web Bluetooth is not available in this browser",
+  "— связь потеряна —": "— link lost —",
+  "— подключено к ": "— connected to ",
+  "ошибка: ": "error: ",
+  "нет соединения": "not connected",
+  "ошибка отправки: ": "send error: ",
+  "Прошивка метки ({0}) старше 0.5: слоты фиксированные и сжатие не поддерживается. Загрузка будет отключена; обновите прошивку.": "The tag firmware ({0}) is older than 0.5: fixed slots, no compression. Uploading is disabled; update the firmware.",
+  "без сжатия": "uncompressed",
+  "LZ": "LZ",
+  "LZ + строки": "LZ + lines",
+  " КБ": " KB",
+  "показать": "show",
+  "проверить": "verify",
+  "стереть": "erase",
+  "занято слотов: {0} из {1}, свободно секторов: {2} из {3} (наибольший кусок {4})": "slots used: {0} of {1}, free sectors: {2} of {3} (largest run {4})",
+  " (занят, будет заменён)": " (used, will be replaced)",
+  "нет ответа от метки": "no answer from the tag",
+  "Метка готовит место…": "The tag is preparing space…",
+  "загрузка: чанк {0} Б, окно {1}, {2}": "upload: chunk {0} B, window {1}, {2}",
+  "без подтверждения": "without acknowledgement",
+  "с подтверждением": "with acknowledgement",
+  "прервано": "aborted",
+  "неверное подтверждение: ": "wrong acknowledgement: ",
+  "{0} из {1} КБ, {2} КБ/с": "{0} of {1} KB, {2} KB/s",
+  "Загружено за {0} с. {1}. Теперь можно нажать «показать» в списке слотов.": "Uploaded in {0} s. {1}. Now press “show” in the slot list.",
+  "загрузка не удалась: ": "upload failed: ",
+  "Не удалось: ": "Failed: ",
+  "К загрузке: {0}, {1} КБ из 20.6 КБ ({2} %), займёт {3} из 78 секторов.": "To upload: {0}, {1} KB of 20.6 KB ({2} %), takes {3} of 78 sectors.",
+  "не удалось прочитать картинку": "could not read the picture",
+  "лог скопирован": "log copied",
+  "не удалось скопировать: ": "could not copy: "
+};
+let lang = "ru";
+try{ lang = localStorage.getItem("lang") || ((navigator.language || "").slice(0, 2) === "ru" || (navigator.language || "").slice(0, 2) === "be" ? "ru" : "en"); }catch(e){}
+function T(s, ...a){
+  let r = (lang === "en" && EN[s] !== undefined) ? EN[s] : s;
+  a.forEach((v, i) => { r = r.split("{" + i + "}").join(String(v)); });
+  return r;
+}
+const i18nNodes = [];
+function i18nInit(){
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()){
+    const k = n.data.trim();
+    if (k && EN[k] !== undefined) i18nNodes.push([n, n.data, k]);
+  }
+  const t = document.querySelector("title");
+  if (t) i18nNodes.push([t.firstChild, t.firstChild.data, t.firstChild.data.trim()]);
+}
+function i18nApply(){
+  document.documentElement.lang = lang;
+  for (const [n, orig, k] of i18nNodes) if (n.isConnected) n.data = lang === "en" ? orig.replace(k, EN[k]) : orig;
+}
+
 /* ================= Bluetooth, log, slots ================= */
 const SVC = 0x2446, CHR = 0x2446;
 const $ = id => document.getElementById(id);
@@ -302,8 +426,10 @@ function add(text, cls){
   if (stick) logEl.scrollTop = logEl.scrollHeight;
 }
 const connected = () => !!(chr && dev && dev.gatt && dev.gatt.connected);
-function setState(on, txt){
-  $("st").textContent = txt;
+let stKey = "не подключено", stExtra = "";
+function setState(on, key, extra){
+  stKey = key; stExtra = extra || "";
+  $("st").textContent = T(stKey) + stExtra;
   $("bConn").disabled = on;
   $("bDisc").disabled = !on;
   document.querySelectorAll(".nc,[data-c]").forEach(b => b.disabled = !on);
@@ -316,10 +442,10 @@ const h2 = n => (n & 255).toString(16).padStart(2, "0");
 const le32 = v => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
 function parseHex(s){
   const t = s.replace(/[^0-9a-fA-F]/g, "");
-  if (!t.length || t.length % 2) throw new Error("нужно чётное число hex-цифр");
+  if (!t.length || t.length % 2) throw new Error(T("нужно чётное число hex-цифр"));
   const out = [];
   for (let i = 0; i < t.length; i += 2) out.push(parseInt(t.substr(i, 2), 16));
-  if (out.length > 20) throw new Error("не больше 20 байт");
+  if (out.length > 20) throw new Error(T("не больше 20 байт"));
   return Uint8Array.from(out);
 }
 
@@ -336,13 +462,13 @@ function onNotify(ev){
 }
 
 async function connect(){
-  if (!navigator.bluetooth){ add("Web Bluetooth недоступен в этом браузере", "sys"); return; }
+  if (!navigator.bluetooth){ add(T("Web Bluetooth недоступен в этом браузере"), "sys"); return; }
   try{
     const all = $("showAll").checked;
     dev = await navigator.bluetooth.requestDevice(all ? {acceptAllDevices: true, optionalServices: [SVC]} : {filters: [{namePrefix: "OD"}], optionalServices: [SVC]});
     dev.addEventListener("gattserverdisconnected", () => {
       if (buf.length){ add(buf); buf = ""; }
-      add("— связь потеряна —", "sys");
+      add(T("— связь потеряна —"), "sys");
       setState(false, "не подключено");
     });
     setState(false, "подключение…");
@@ -351,26 +477,26 @@ async function connect(){
     chr = await svc.getCharacteristic(CHR);
     chr.addEventListener("characteristicvaluechanged", onNotify);
     await chr.startNotifications();
-    setState(true, "подключено: " + dev.name);
-    add("— подключено к " + dev.name + " —", "sys");
+    setState(true, "подключено: ", dev.name);
+    add(T("— подключено к ") + dev.name + " —", "sys");
     fwInfo = null; renderFw();
     send("02").catch(() => {});
     setTimeout(() => { if (connected()) send("40").catch(() => {}); }, 500);
     setTimeout(() => { if (connected()) send("4D").catch(() => {}); }, 1000);
     setTimeout(() => { if (!fwInfo){ fwInfo = {ver: "?", old: true}; renderFw(); } }, 4000);
   }catch(e){
-    add("ошибка: " + e.message, "sys");
+    add(T("ошибка: ") + e.message, "sys");
     setState(false, "не подключено");
   }
 }
 
 async function send(s, strict){
-  if (!chr){ add("нет соединения", "sys"); if (strict) throw new Error("нет соединения"); return; }
+  if (!chr){ add(T("нет соединения"), "sys"); if (strict) throw new Error(T("нет соединения")); return; }
   try{
     const a = typeof s === "string" ? parseHex(s) : s;
     add("→ " + hx(a), "tx");
     if (chr.writeValueWithoutResponse) await chr.writeValueWithoutResponse(a); else await chr.writeValue(a);
-  }catch(e){ add("ошибка отправки: " + e.message, "sys"); if (strict) throw e; }
+  }catch(e){ add(T("ошибка отправки: ") + e.message, "sys"); if (strict) throw e; }
 }
 
 function renderFw(){
@@ -378,7 +504,7 @@ function renderFw(){
   let msg = "";
   if (fwInfo){
     const m = /^437-(\d+)\.(\d+)/.exec(fwInfo.ver);
-    if (!m || +m[1] === 0 && +m[2] < 5) msg = "Прошивка метки (" + fwInfo.ver + ") старше 0.5: слоты фиксированные и сжатие не поддерживается. Загрузка будет отключена; обновите прошивку.";
+    if (!m || +m[1] === 0 && +m[2] < 5) msg = T("Прошивка метки ({0}) старше 0.5: слоты фиксированные и сжатие не поддерживается. Загрузка будет отключена; обновите прошивку.", fwInfo.ver);
   }
   w.textContent = msg; w.hidden = !msg;
   fwOk = !msg;
@@ -402,25 +528,27 @@ function lineHook(t){
   if (upw){ const w = upw; upw = null; w(); }
 }
 
+let lastSum = null;
 const FMT_NAME = ["без сжатия", "LZ", "LZ + строки"];
 function renderSlots(sum){
   const tb = $("slotRows");
   tb.textContent = "";
-  if (!slots.length){ const tr = tb.insertRow(); const td = tr.insertCell(); td.colSpan = 5; td.innerHTML = "<small>слотов нет</small>"; }
+  if (!slots.length){ const tr = tb.insertRow(); const td = tr.insertCell(); td.colSpan = 5; td.innerHTML = "<small>" + T("слотов нет") + "</small>"; }
   slots.sort((a, b) => a.n - b.n).forEach(s => {
     const tr = tb.insertRow();
     tr.insertCell().textContent = s.n;
-    tr.insertCell().textContent = FMT_NAME[s.fmt] || s.fmt;
-    tr.insertCell().textContent = (s.len / 1024).toFixed(1) + " КБ";
+    tr.insertCell().textContent = T(FMT_NAME[s.fmt]) || s.fmt;
+    tr.insertCell().textContent = (s.len / 1024).toFixed(1) + T(" КБ");
     tr.insertCell().textContent = s.sect;
     const td = tr.insertCell();
     for (const [lbl, cmd, cls] of [["показать", 0x45, ""], ["проверить", 0x47, ""], ["стереть", 0x41, "danger"]]){
-      const b = document.createElement("button"); b.className = "sm " + cls; b.textContent = lbl;
+      const b = document.createElement("button"); b.className = "sm " + cls; b.textContent = T(lbl);
       b.onclick = async () => { await send(Uint8Array.from([cmd, s.n])); if (cmd === 0x41) setTimeout(() => send("40"), 1500); };
       td.appendChild(b); td.appendChild(document.createTextNode(" "));
     }
   });
-  $("free").innerHTML = "<small>занято слотов: " + sum.used + " из " + sum.max + ", свободно секторов: " + sum.free + " из " + sum.total + " (наибольший кусок " + sum.big + ")</small>";
+  lastSum = sum;
+  $("free").innerHTML = "<small>" + T("занято слотов: {0} из {1}, свободно секторов: {2} из {3} (наибольший кусок {4})", sum.used, sum.max, sum.free, sum.total, sum.big) + "</small>";
   fillSlotSelect();
 }
 function fillSlotSelect(){
@@ -429,7 +557,7 @@ function fillSlotSelect(){
   const used = new Set(slots.map(s => s.n));
   let firstFree = -1;
   for (let i = 0; i < 24; i++){
-    const o = document.createElement("option"); o.value = i; o.textContent = i + (used.has(i) ? " (занят, будет заменён)" : "");
+    const o = document.createElement("option"); o.value = i; o.textContent = i + (used.has(i) ? T(" (занят, будет заменён)") : "");
     sel.appendChild(o);
     if (firstFree < 0 && !used.has(i)) firstFree = i;
   }
@@ -442,7 +570,7 @@ function nextUp(ms){
   return new Promise((res, rej) => {
     const tick = () => {
       if (upq.length) return res(upq.shift());
-      const timer = setTimeout(() => { upw = null; rej(new Error("нет ответа от метки")); }, ms);
+      const timer = setTimeout(() => { upw = null; rej(new Error(T("нет ответа от метки"))); }, ms);
       upw = () => { clearTimeout(timer); tick(); };
     };
     tick();
@@ -454,7 +582,7 @@ async function nextUpLine(re, ms){
     const t = await nextUp(Math.max(100, end - Date.now()));
     if (/^UP FAIL/.test(t) || /^slot \d+: no room/.test(t)) throw new Error(t);
     if (re.test(t)) return t;
-    if (Date.now() > end) throw new Error("нет ответа от метки");
+    if (Date.now() > end) throw new Error(T("нет ответа от метки"));
   }
 }
 
@@ -470,17 +598,17 @@ async function upload(slot, p){
   prog.value = 0;
   try{
     const crc = crc32(data);
-    info.textContent = "Метка готовит место…";
+    info.textContent = T("Метка готовит место…");
     const win = 8;
     await send(Uint8Array.from([0x42, slot, ...le32(data.length), ...le32(crc), win, p.fmt]), true);
     const rdy = await nextUpLine(/^UP READY/, 90000);
     const chunk = +/chunk=(\d+)/.exec(rdy)[1], w = +/win=(\d+)/.exec(rdy)[1];
     const noResp = $("wmode").value === "nr" && chr.writeValueWithoutResponse;
-    add("загрузка: чанк " + chunk + " Б, окно " + w + ", " + (noResp ? "без подтверждения" : "с подтверждением"), "sys");
+    add(T("загрузка: чанк {0} Б, окно {1}, {2}", chunk, w, T(noResp ? "без подтверждения" : "с подтверждением")), "sys");
     let off = 0, seq = 0, since = 0;
     const t0 = performance.now();
     while (off < data.length){
-      if (upAbort) throw new Error("прервано");
+      if (upAbort) throw new Error(T("прервано"));
       const n = Math.min(chunk, data.length - off);
       const pkt = new Uint8Array(3 + n);
       pkt[0] = 0x43; pkt[1] = seq & 255; pkt[2] = seq >> 8;
@@ -490,20 +618,20 @@ async function upload(slot, p){
       if (since >= w || off >= data.length){
         since = 0;
         const a = await nextUpLine(/^UP ACK/, 15000);
-        if (+a.slice(7) !== off) throw new Error("неверное подтверждение: " + a);
+        if (+a.slice(7) !== off) throw new Error(T("неверное подтверждение: ") + a);
         prog.value = 100 * off / data.length;
         const sec = (performance.now() - t0) / 1000;
-        info.textContent = Math.round(off / 1024 * 10) / 10 + " из " + Math.round(data.length / 1024 * 10) / 10 + " КБ, " + (off / 1024 / sec).toFixed(1) + " КБ/с";
+        info.textContent = T("{0} из {1} КБ, {2} КБ/с", Math.round(off / 1024 * 10) / 10, Math.round(data.length / 1024 * 10) / 10, (off / 1024 / sec).toFixed(1));
       }
     }
     await send(Uint8Array.from([0x44]), true);
     const ok = await nextUpLine(/^UP OK/, 30000);
-    info.textContent = "Загружено за " + ((performance.now() - t0) / 1000).toFixed(1) + " с. " + ok + ". Теперь можно нажать «показать» в списке слотов.";
+    info.textContent = T("Загружено за {0} с. {1}. Теперь можно нажать «показать» в списке слотов.", ((performance.now() - t0) / 1000).toFixed(1), ok);
     prog.value = 100;
     setTimeout(() => send("40"), 300);
   }catch(e){
-    add("загрузка не удалась: " + e.message, "sys");
-    info.textContent = "Не удалось: " + e.message;
+    add(T("загрузка не удалась: ") + e.message, "sys");
+    info.textContent = T("Не удалось: ") + e.message;
     try{ await send(Uint8Array.from([0x49])); }catch(_){}
   }finally{
     upBusy = false; refreshUp();
@@ -533,7 +661,7 @@ function render(){
   frame = toFrame(idx);
   packed = packFrame(frame);
   const pct = Math.round(100 * packed.data.length / FRAME_LEN);
-  $("upinfo").textContent = "К загрузке: " + FMT_NAME[packed.fmt] + ", " + (packed.data.length / 1024).toFixed(1) + " КБ из 20.6 КБ (" + pct + " %), займёт " + sectorsFor(packed.data.length) + " из 78 секторов.";
+  $("upinfo").textContent = T("К загрузке: {0}, {1} КБ из 20.6 КБ ({2} %), займёт {3} из 78 секторов.", T(FMT_NAME[packed.fmt]), (packed.data.length / 1024).toFixed(1), pct, sectorsFor(packed.data.length));
   $("prog").value = 0;
   refreshUp();
 }
@@ -543,7 +671,7 @@ $("file").onchange = () => {
   if (!f) return;
   const img = new Image();
   img.onload = () => { srcImg = img; render(); };
-  img.onerror = () => add("не удалось прочитать картинку", "sys");
+  img.onerror = () => add(T("не удалось прочитать картинку"), "sys");
   img.src = URL.createObjectURL(f);
 };
 
@@ -551,7 +679,7 @@ $("file").onchange = () => {
 $("bConn").onclick = connect;
 $("bDisc").onclick = () => { if (dev && dev.gatt.connected) dev.gatt.disconnect(); };
 $("bList").onclick = () => send("40");
-$("bEraseAll").onclick = () => { if (confirm("Стереть все слоты?")){ send("41 ff"); setTimeout(() => send("40"), 6000); } };
+$("bEraseAll").onclick = () => { if (confirm(T("Стереть все слоты?"))){ send("41 ff"); setTimeout(() => send("40"), 6000); } };
 $("bUp").onclick = () => { if (frame && packed) upload(+$("slot").value, packed); };
 $("bUpStop").onclick = () => { upAbort = true; };
 $("bOdGet").onclick = () => send("4D");
@@ -563,7 +691,7 @@ document.querySelectorAll("[data-c]").forEach(b => b.onclick = () => send(b.data
 $("bRaw").onclick = () => send($("raw").value);
 $("raw").addEventListener("keydown", e => { if (e.key === "Enter") $("bRaw").click(); });
 $("bClear").onclick = () => { logEl.textContent = ""; plain = ""; };
-$("bCopy").onclick = async () => { try{ await navigator.clipboard.writeText(plain); add("лог скопирован", "sys"); }catch(e){ add("не удалось скопировать: " + e.message, "sys"); } };
+$("bCopy").onclick = async () => { try{ await navigator.clipboard.writeText(plain); add(T("лог скопирован"), "sys"); }catch(e){ add(T("не удалось скопировать: ") + e.message, "sys"); } };
 $("bSave").onclick = () => {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([plain], {type: "text/plain"}));
@@ -571,6 +699,21 @@ $("bSave").onclick = () => {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
+
+/* ================= language switch ================= */
+function setLang(l, save){
+  lang = l;
+  if (save) try{ localStorage.setItem("lang", l); }catch(e){}
+  $("bLang").textContent = lang === "en" ? "RU" : "EN";
+  i18nApply();
+  $("st").textContent = T(stKey) + stExtra;
+  renderFw();
+  if (lastSum) renderSlots(lastSum); else fillSlotSelect();
+  if (srcImg) render();
+}
+$("bLang").onclick = () => setLang(lang === "en" ? "ru" : "en", true);
+i18nInit();
+setLang(lang, false);
 </script>
 </body>
 </html>
