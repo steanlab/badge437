@@ -98,6 +98,7 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="row"><label>ориентация</label>
     <select id="oMode"><option value="0">как есть</option><option value="2">зеркально по горизонтали</option><option value="1">строки в обратном порядке (диагностика)</option><option value="3">оба</option></select>
     <label>цвета (lut, hex)</label><input type="text" id="oLut" style="width:4em" value="27">
+    <label>слот для потока OpenDisplay</label><input type="number" id="oSlot" min="0" max="23" value="23" style="width:4.5em">
     <button class="nc" id="bOdSet" disabled>Применить</button><button class="nc" id="bOdGet" disabled>Прочитать</button></div>
   <div class="row"><small id="odInfo">Текущие значения читаются с метки. Ориентация и цвета применяются при рисовании, повторно загружать картинку не нужно.</small></div>
 </div>
@@ -337,6 +338,7 @@ const EN = {
   "строки в обратном порядке (диагностика)": "lines in reverse order (diagnostics)",
   "оба": "both",
   "цвета (lut, hex)": "colours (lut, hex)",
+  "слот для потока OpenDisplay": "slot for the OpenDisplay stream",
   "Применить": "Apply",
   "Прочитать": "Read",
   "Текущие значения читаются с метки. Ориентация и цвета применяются при рисовании, повторно загружать картинку не нужно.": "The current values are read from the tag. Orientation and colours are applied when drawing, the picture does not have to be uploaded again.",
@@ -522,7 +524,7 @@ function lineHook(t){
   if ((m = /^STATUS fw (\S+)/.exec(t))){ fwInfo = {ver: m[1]}; renderFw(); }
   if ((m = /^OD mode=(\d+) slot=(\d+) lut=([0-9A-Fa-f]+)/.exec(t))){
     odCfg = {mode: +m[1], slot: +m[2], lut: m[3].toUpperCase()};
-    $("oMode").value = String(odCfg.mode); $("oLut").value = odCfg.lut;
+    $("oMode").value = String(odCfg.mode); $("oLut").value = odCfg.lut; $("oSlot").value = String(odCfg.slot);
   }
   if ((m = /^slot (\d+): fmt (\d), (\d+) bytes, (\d+) sectors, crc=([0-9A-F]+)/.exec(t))) slotTmp.push({n: +m[1], fmt: +m[2], len: +m[3], sect: +m[4], crc: m[5]});
   if ((m = /^slots: (\d+) used, (\d+) of (\d+) sectors free, largest run (\d+), max (\d+) slots/.exec(t))){
@@ -692,7 +694,7 @@ $("bUpStop").onclick = () => { upAbort = true; };
 $("bOdGet").onclick = () => send("4D");
 $("bOdSet").onclick = () => {
   const lut = parseInt($("oLut").value || "27", 16) & 255;
-  send(Uint8Array.from([0x4D, +$("oMode").value, odCfg ? odCfg.slot : 0, lut]));
+  send(Uint8Array.from([0x4D, +$("oMode").value, Math.max(0, Math.min(23, +$("oSlot").value || 0)), lut]));
 };
 document.querySelectorAll("[data-c]").forEach(b => b.onclick = () => send(b.dataset.c));
 $("bRaw").onclick = () => send($("raw").value);
