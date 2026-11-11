@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>badge437 — консоль</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
 :root{--bg:#f4f5f7;--fg:#1c1f24;--card:#fff;--bd:#d5d9e0;--acc:#2563eb;--mut:#6b7280;--log:#0f172a;--logfg:#d1fae5}
 @media (prefers-color-scheme:dark){:root{--bg:#14161a;--fg:#e6e8eb;--card:#1e2126;--bd:#343a43;--acc:#60a5fa;--mut:#9aa3af;--log:#0b0d10;--logfg:#a7f3d0}}
@@ -50,6 +55,7 @@ details.card[open]>summary{margin-bottom:8px}
     <button id="bConn" class="pri">Подключиться</button>
     <button id="bDisc" disabled>Отключиться</button>
     <button id="bLang" class="sm" title="Language / Язык">EN</button>
+    <button id="bInstall" class="sm" hidden>Установить как приложение</button>
     <label><input type="checkbox" id="showAll"> показать все устройства</label>
     <span id="st">не подключено</span>
   </div>
@@ -345,6 +351,7 @@ const EN = {
   "команда (hex, каждый байт — две цифры)": "command (hex, two digits per byte)",
   "Отправить": "Send",
   "Слоты: 40 список, 41 ss стереть (FF — все), 45 ss показать, 46 ss тест, 47 ss проверить, 4D mode slot [lut] настройки. Полный список — firmware/n437/README.md.": "Slots: 40 list, 41 ss erase (FF = all), 45 ss show, 46 ss test, 47 ss verify, 4D mode slot [lut] settings. The full list is in firmware/n437/README.md.",
+  "Установить как приложение": "Install as an app",
   "Журнал": "Log",
   "Очистить": "Clear",
   "Копировать": "Copy",
@@ -714,6 +721,13 @@ function setLang(l, save){
 $("bLang").onclick = () => setLang(lang === "en" ? "ru" : "en", true);
 i18nInit();
 setLang(lang, false);
+
+/* ================= installable app (PWA) ================= */
+let installEv = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEv = e; $("bInstall").hidden = false; });
+window.addEventListener("appinstalled", () => { installEv = null; $("bInstall").hidden = true; });
+$("bInstall").onclick = async () => { if (!installEv) return; installEv.prompt(); try{ await installEv.userChoice; }catch(e){} installEv = null; $("bInstall").hidden = true; };
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
 </html>
