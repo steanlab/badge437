@@ -68,7 +68,24 @@ These are the numbers of the ready UF2. If you build the bridge firmware yoursel
    python3 tools/check_waveform.py nebular-debug-*/before-1.bin
    ```
 
-   It must say `waveform block OK`. If it says `BAD`, **do not flash**: see section 8, "Damaged waveform block". It refuses a tag whose flash protection status is not `2C`, or whose factory record it does not recognise: then stop and ask.
+   It must say `waveform block OK`. If it says `BAD`, **do not flash**: see section 8, "Damaged waveform block". It refuses a tag whose flash protection status is not `2C`, or whose factory record it does not recognise: then stop and read the next paragraph.
+
+   **If the dry run stops with `Factory record does not match this 437Q-N revision; no writes`:** nothing was written to the tag (the backup was made). A few 437Q-N tags have a slightly different factory record than the one the script knows; the firmware of this project does not use that record, and such a tag flashes and draws like any other (tested on one). Check what your record says:
+
+   ```
+   python3 tools/check_factory_record.py nebular-debug-*/before-1.bin
+   ```
+
+   * **"a 437Q-N record that the stock script refuses"**: make a local copy of the script that accepts it and use that copy in **both** commands (dry run and flash) in place of `tools/nebular_debug_custom.py`:
+
+     ```
+     python3 tools/make_tolerant_script.py tools/nebular_debug_custom.py
+     python3 tools/nebular_debug_tolerant.py --model 437 --custom-firmware firmware/n437_0.9f.bin --no-questions --seconds 5
+     ```
+
+     The copy accepts the known record or any record that says 437Q-N (panel 176 x 480, model code `2B`); every other safety check of the script stays. If the check printed a **new variant**, please open an issue with its output so that it can be listed. Check the waveform block with `check_waveform.py` as above before the flash.
+   * **"NOT a 437Q-N record"**: **do not flash.** It is another model or damaged; open an issue and paste the output (it contains no serial number or address).
+
 5. **Flash:**
 
    ```
@@ -175,6 +192,7 @@ Uploads are refused while a trial is open (the first seconds after a switch).
 | "no room" on upload | free sectors are not contiguous; erase a slot (`40` in the developer card shows used slots, free sectors and the largest free run) |
 | The link drops during the refresh | normal with some phones; reconnect. The OpenDisplay tool reconnects by itself |
 | Damaged waveform block: the log says `waveform block CRC bad ... not drawing`, `STATUS` ends with `wf=0`, the page shows a red notice, `check_waveform.py` says BAD | The panel data in the tag's flash (`0x78000`..`0x7AFFF`) was damaged, usually by firmware that was on the tag before. Pictures can be uploaded but not shown. Not repairable from the page: it needs the programmer and an intact copy of the same block from a tag with the same panel data version (in the cases we saw only the sector `0x79000` was damaged). Keep the backup, do not post dumps, and ask in the Issues |
+| The dry run ends with `Factory record does not match this 437Q-N revision; no writes` | The script does not know the factory record of your tag. Nothing was written. Run `tools/check_factory_record.py` on the backup and follow section 1 (a 437Q-N record: `tools/make_tolerant_script.py`; not a 437Q-N record: do not flash, open an issue) |
 | Nothing at all after flashing | check that the dry run said `plan_verified` and the flash `whole_flash_verified`; check the wires; try the power cycle; restore the backup if needed |
 | The tag restarts every 15 s | the watchdog is biting: report it with the full log of the page ("Save to file") |
 
