@@ -82,7 +82,7 @@ details.card[open]>summary{margin-bottom:8px}
       <div class="row"><label>растр</label>
         <select id="dith"><option value="fs">Флойд–Стейнберг (фото)</option><option value="atk">Аткинсон (гравюры, текст)</option><option value="bay">упорядоченный (сжимается лучше)</option><option value="none">без растра</option></select></div>
       <div class="row"><label>цвета</label>
-        <select id="pal"><option value="4">4 цвета (белый, чёрный, красный, жёлтый)</option><option value="7">7 цветов (прошивка 0.9d)</option></select></div>
+        <select id="pal"><option value="4">4 цвета (белый, чёрный, красный, жёлтый)</option><option value="7">8 цветов (прошивка 0.9d)</option></select></div>
       <div class="row"><label>яркость</label><input type="range" id="bri" min="-60" max="60" value="0"></div>
       <div class="row"><label>контраст</label><input type="range" id="con" min="-60" max="60" value="0"></div>
       <div class="row"><label>в слот</label><select id="slot"></select>
@@ -330,16 +330,16 @@ function toFrame(idx){
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) out[y * LB + (x >> 2)] |= OD[idx[y * W + x]] << (6 - 2 * (x & 3));
   return out;
 }
-/* 7 colours (firmware 0.9d, two passes). Index: white, black, dark red, yellow, orange, grey, dark grey; the colours used for the decision and the preview are ideal screen colours,
+/* 8 colours (firmware 0.9d, two passes). Index: white, black, dark red, yellow, orange, grey, dark grey, ochre (yellow + pass-1 code 2, measured Y 0.55 of white); the colours used for the decision and the preview are ideal screen colours,
    the panel shows its own (black and the greys are lighter, see docs/COLOR_CALIBRATION.md). Panel codes per pass: pass 0 (long record) white 1, yellow 2, orange 0, dark red 3,
    black and the greys 1 (white); pass 1 (short record) adds black 0, grey 2, dark grey 3, nothing 1. */
-const PAL7 = [[255,255,255],[0,0,0],[200,30,30],[235,200,20],[235,120,20],[170,170,170],[85,85,85]];
+const PAL7 = [[255,255,255],[0,0,0],[200,30,30],[235,200,20],[235,120,20],[170,170,170],[85,85,85],[200,165,40]];
 
 /* 7-colour decision (page "пункт 1"): the panel greys are lighter than ideal ones (measured, relative to panel white: black 0.21, dark grey 0.36, grey 0.65, white 1.0),
    so the achromatic part of the picture is compressed into that range and the greys are chosen at their measured sRGB values. Saturated pixels (red, yellow, orange) are left alone,
    the compression is weighted by (1 - saturation). PAL7 stays the preview palette, PAL7D is only used for the decision and the diffused error. */
 const BLK7 = 0.21;
-const PAL7D = [[255,255,255],[128,128,128],[200,30,30],[235,200,20],[235,120,20],[212,212,212],[163,163,163]];
+const PAL7D = [[255,255,255],[128,128,128],[200,30,30],[235,200,20],[235,120,20],[212,212,212],[163,163,163],[200,165,40]];
 const s2l = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
 const l2s = v => 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055);
 function tone7(f){
@@ -353,8 +353,8 @@ function tone7(f){
   }
   return o;
 }
-const P0_7 = [1, 1, 3, 2, 0, 1, 1];
-const P1_7 = [1, 0, 1, 1, 1, 2, 3];
+const P0_7 = [1, 1, 3, 2, 0, 1, 1, 2];
+const P1_7 = [1, 0, 1, 1, 1, 2, 3, 2];
 /* palette indices (PAL7) -> two planes of panel codes, 480 lines of 44 bytes each, 4 pixels per byte, first pixel in bits 7..6 */
 function toPlanes(idx){
   const a = new Uint8Array(FRAME_LEN), b = new Uint8Array(FRAME_LEN);
@@ -475,10 +475,10 @@ const EN = {
   "Прошивка метки ({0}) старше 0.5: слоты фиксированные и сжатие не поддерживается. Загрузка будет отключена; обновите прошивку.": "The tag firmware ({0}) is older than 0.5: fixed slots, no compression. Uploading is disabled; update the firmware.",
   "цвета": "colours",
   "4 цвета (белый, чёрный, красный, жёлтый)": "4 colours (white, black, red, yellow)",
-  "7 цветов (прошивка 0.9d)": "7 colours (firmware 0.9d)",
-  "7 цветов, без сжатия": "7 colours, uncompressed",
-  "7 цветов, LZ": "7 colours, LZ",
-  "7 цветов, LZ + строки": "7 colours, LZ + lines",
+  "8 цветов (прошивка 0.9d)": "8 colours (firmware 0.9d)",
+  "8 цветов, без сжатия": "8 colours, uncompressed",
+  "8 цветов, LZ": "8 colours, LZ",
+  "8 цветов, LZ + строки": "8 colours, LZ + lines",
   "К загрузке: {0}, {1} КБ из {5} КБ ({2} %), займёт {3} из {4} секторов.": "To upload: {0}, {1} KB of {5} KB ({2} %), takes {3} of {4} sectors.",
   "без сжатия": "uncompressed",
   "LZ": "LZ",
@@ -660,7 +660,7 @@ function lineHook(t){
 }
 
 let lastSum = null;
-const FMT_NAME = ["без сжатия", "LZ", "LZ + строки", "7 цветов, без сжатия", "7 цветов, LZ", "7 цветов, LZ + строки"];
+const FMT_NAME = ["без сжатия", "LZ", "LZ + строки", "8 цветов, без сжатия", "8 цветов, LZ", "8 цветов, LZ + строки"];
 function renderSlots(sum){
   const tb = $("slotRows");
   tb.textContent = "";
