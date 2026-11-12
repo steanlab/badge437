@@ -57,12 +57,20 @@ details.card[open]>summary{margin-bottom:8px}
     <button id="bDisc" disabled>Отключиться</button>
     <button id="bLang" class="sm" title="Language / Язык">EN</button>
     <button id="bInstall" class="sm" hidden>Установить как приложение</button>
+    <button id="bWiz" class="sm" hidden>Мастер первого запуска</button>
     <label><input type="checkbox" id="showAll"> показать все устройства</label>
     <span id="st">не подключено</span>
   </div>
   <div class="row"><small>Нужен Chrome/Edge с Web Bluetooth. Имя метки: OD- и четыре символа MAC (например OD-6D2A).</small></div>
   <div id="fwWarn" class="warn" hidden></div>
 </div>
+
+<details class="card" id="wizCard" open>
+  <summary>Первый запуск: пошаговая проверка</summary>
+  <ol id="wizList" style="padding-left:22px;margin:8px 0"></ol>
+  <div class="row"><small id="wizNote"></small></div>
+  <div class="row"><button class="sm" id="wizHide">Скрыть мастер</button></div>
+</details>
 
 <div class="card">
   <h2>Слайды в памяти метки</h2>
@@ -475,6 +483,32 @@ const EN = {
   "Рисование не удалось.": "Drawing failed.",
   "Нарисовано.": "Drawn.",
   "Интервал меньше 5 минут: панель и батарея будут расходоваться быстро. Продолжить?": "An interval under 5 minutes wears the panel and the battery quickly. Continue?",
+  "Первый запуск: пошаговая проверка": "First start: step-by-step check",
+  "Скрыть мастер": "Hide the wizard",
+  "Мастер первого запуска": "First-start wizard",
+  "Подключитесь к метке (кнопка «Подключиться»; метка должна быть в окне связи: после включения питания или касания телефоном).": "Connect to the tag (the Connect button; the tag must be in its link window: after power-up or a tap with the phone).",
+  "Проверка прошивки (после подключения).": "Firmware check (after connecting).",
+  "Читаю версию прошивки…": "Reading the firmware version…",
+  "Прошивка {0}: актуальная.": "Firmware {0}: up to date.",
+  "Прошивка {0}: старше 0.8, обновление по Bluetooth в ней невозможно, перепрошейте программатором (файл firmware/n437_0.9e.bin).": "Firmware {0}: older than 0.8, it cannot be updated over Bluetooth; reflash it with the programmer (file firmware/n437_0.9e.bin).",
+  "Прошивка {0}: есть новее (0.9e). Скачайте firmware/n437_0.9e.bin из репозитория и загрузите в карточке «Обновление прошивки (OTA)».": "Firmware {0}: a newer one exists (0.9e). Download firmware/n437_0.9e.bin from the repository and upload it in the card \"Firmware update over Bluetooth (OTA)\".",
+  "Открыть карточку OTA": "Open the OTA card",
+  "Проверка ориентации (после подключения).": "Orientation check (after connecting).",
+  "Читаю ориентацию…": "Reading the orientation…",
+  "Ориентация: зеркально по горизонтали (как нужно для этой панели).": "Orientation: mirrored horizontally (as this panel needs).",
+  "Ориентация сейчас не «зеркально по горизонтали»: картинка может выйти зеркальной.": "The orientation is not \"mirrored horizontally\": the picture may come out mirrored.",
+  "Поставить «зеркально»": "Set \"mirrored\"",
+  "В метке слайдов: {0}.": "Slides in the tag: {0}.",
+  "Выберите картинку в карточке «Новая картинка», нажмите «Загрузить в метку».": "Choose a picture in the card \"New picture\" and press \"Upload to the tag\".",
+  "Выбрать картинку": "Choose a picture",
+  "Слайд нарисован.": "A slide has been drawn.",
+  "Нарисуйте слайд на панели (около 28 с, панель мигает).": "Draw a slide on the panel (about 28 s, the panel flashes).",
+  "Показать слайд {0}": "Show slide {0}",
+  "Слайд-шоу включено.": "The slideshow is on.",
+  "Слайд-шоу: нужно хотя бы два слайда; можно пропустить, если слайд один.": "Slideshow: you need at least two slides; skip it if you have one.",
+  "Слайд-шоу: включите в карточке «Слайд-шоу» (интервал, порядок, слайды) и нажмите «Применить».": "Slideshow: switch it on in the card \"Slideshow\" (interval, order, slides) and press \"Apply\".",
+  "Открыть карточку слайд-шоу": "Open the slideshow card",
+  "Готово: метка настроена. Мастер можно скрыть.": "Done: the tag is set up. You can hide the wizard.",
   "Режим работы": "Operating mode",
   "режим": "mode",
   "Автономный (по умолчанию, экономит батарею)": "Standalone (default, saves the battery)",
@@ -593,6 +627,7 @@ function setState(on, key, extra){
   document.querySelectorAll(".nc,[data-c]").forEach(b => b.disabled = !on);
   refreshUp();
   if (typeof renderOta === "function") renderOta();
+  if (window.__wizOn) renderWiz();
 }
 setState(false, "не подключено");
 
@@ -642,6 +677,7 @@ async function connect(){
     send("02").catch(() => {});
     setTimeout(() => { if (connected()) send("40").catch(() => {}); }, 500);
     setTimeout(() => { if (connected()) send("4D").catch(() => {}); }, 1000);
+    setTimeout(() => { if (connected()) send("4B").catch(() => {}); }, 1500);
     setTimeout(() => { if (!fwInfo){ fwInfo = {ver: "?", old: true}; renderFw(); } }, 4000);
   }catch(e){
     add(T("ошибка: ") + e.message, "sys");
@@ -673,8 +709,11 @@ function renderFw(){
 }
 function lineHook(t){
   let m;
+  setTimeout(() => { if (window.__wizOn) renderWiz(); }, 0);
   if ((m = /^STATUS fw (\S+)/.exec(t))){ fwInfo = {ver: m[1]}; renderFw(); }
   if ((m = /^STATE .* img=(\S)(?: tr=(\d+) tn=(\d+))?/.exec(t))){ curImg = m[1]; curTr = m[2] === undefined ? null : +m[2]; curTn = m[3] === undefined ? 0 : +m[3]; renderOta(); }
+  if (/^n437: done/.test(t) && drawTick) wizDrawn = true;
+  if (/^SS (on|off) every/.test(t)) ssKnown = true;
   if (/^n437: (done|FAILED)/.test(t) && drawTick) drawEnd(T(/FAILED/.test(t) ? "Рисование не удалось." : "Нарисовано."));
   if ((m = /^OTA STAGED (\S+) (\d+) bytes/.exec(t))){ otaStaged = m[1]; renderOta(); }
   if ((m = /^OTA (DONE|HALF-DONE)/.exec(t))){ otaStaged = null; add(T("метка переключилась на новую прошивку и перезапускается: подключитесь снова (окно после включения питания)"), "sys"); renderOta(); }
@@ -976,6 +1015,52 @@ $("bSsSet").onclick = () => {
   setTimeout(() => send(Uint8Array.from([0x4F, 8, +$("ssOrder").value])), 400);
 };
 $("mSplash").onchange = () => send(Uint8Array.from([0x4F, 9, $("mSplash").checked ? 1 : 0]));
+
+/* ================= first-start wizard ================= */
+const WIZ_CUR = 95;		/* 0.9e */
+function fwNum(){
+  const m = fwInfo && /^437-(\d+)\.(\d+)([a-z]?)/.exec(fwInfo.ver);
+  return m ? +m[1] * 1000 + +m[2] * 10 + (m[3] ? m[3].charCodeAt(0) - 96 : 0) : -1;
+}
+let wizDrawn = false, ssKnown = false;
+function goTo(id){ const e = $(id); if (e && e.tagName === "DETAILS") e.open = true; if (e) e.scrollIntoView({behavior: "smooth", block: "center"}); }
+function renderWiz(){
+  const ol = $("wizList");
+  if (!ol) return;
+  const on = connected(), v = fwNum(), mirrored = odCfg && odCfg.mode === 2;
+  const steps = [
+    {ok: on, txt: T("Подключитесь к метке (кнопка «Подключиться»; метка должна быть в окне связи: после включения питания или касания телефоном)."), btn: on ? null : [T("Подключиться"), () => $("bConn").click()]},
+    {ok: on && v >= WIZ_CUR, wait: on && v < 0, txt: !on ? T("Проверка прошивки (после подключения).") : v < 0 ? T("Читаю версию прошивки…") : v >= WIZ_CUR ? T("Прошивка {0}: актуальная.", fwInfo.ver)
+        : v < 80 ? T("Прошивка {0}: старше 0.8, обновление по Bluetooth в ней невозможно, перепрошейте программатором (файл firmware/n437_0.9e.bin).", fwInfo.ver)
+        : T("Прошивка {0}: есть новее (0.9e). Скачайте firmware/n437_0.9e.bin из репозитория и загрузите в карточке «Обновление прошивки (OTA)».", fwInfo.ver),
+     btn: (on && v >= 80 && v < WIZ_CUR) ? [T("Открыть карточку OTA"), () => goTo("otaCard")] : null},
+    {ok: on && !!mirrored, wait: on && !odCfg, txt: !on ? T("Проверка ориентации (после подключения).") : !odCfg ? T("Читаю ориентацию…") : mirrored ? T("Ориентация: зеркально по горизонтали (как нужно для этой панели).") : T("Ориентация сейчас не «зеркально по горизонтали»: картинка может выйти зеркальной."),
+     btn: (on && odCfg && !mirrored) ? [T("Поставить «зеркально»"), () => { send(Uint8Array.from([0x4D, 2, odCfg.slot, parseInt(odCfg.lut, 16) & 255])); setTimeout(() => send("4D"), 400); }] : null},
+    {ok: on && slots.length > 0, txt: slots.length ? T("В метке слайдов: {0}.", slots.length) : T("Выберите картинку в карточке «Новая картинка», нажмите «Загрузить в метку»."),
+     btn: (on && !slots.length) ? [T("Выбрать картинку"), () => { goTo("file"); $("file").click(); }] : null},
+    {ok: on && wizDrawn, txt: wizDrawn ? T("Слайд нарисован.") : T("Нарисуйте слайд на панели (около 28 с, панель мигает)."),
+     btn: (on && slots.length && !wizDrawn) ? [T("Показать слайд {0}", slots.slice().sort((a, b) => a.n - b.n)[0].n), () => { const n = slots.slice().sort((a, b) => a.n - b.n)[0].n; send(Uint8Array.from([0x45, n])); drawCountdown(n); }] : null},
+    {ok: on && ssKnown && $("ssOn").checked, txt: ($("ssOn").checked && ssKnown) ? T("Слайд-шоу включено.") : slots.length < 2 ? T("Слайд-шоу: нужно хотя бы два слайда; можно пропустить, если слайд один.") : T("Слайд-шоу: включите в карточке «Слайд-шоу» (интервал, порядок, слайды) и нажмите «Применить»."),
+     btn: (on && slots.length >= 2 && !$("ssOn").checked) ? [T("Открыть карточку слайд-шоу"), () => goTo("ssCard")] : null},
+  ];
+  ol.textContent = "";
+  let cur = steps.findIndex(s => !s.ok);
+  steps.forEach((s, i) => {
+    const li = document.createElement("li");
+    li.style.margin = "6px 0";
+    const mark = s.ok ? "✓ " : i === cur ? "▶ " : "○ ";
+    li.style.opacity = (s.ok || i === cur) ? "1" : "0.6";
+    li.appendChild(document.createTextNode(mark + s.txt + " "));
+    if (s.btn){ const b = document.createElement("button"); b.className = "sm"; b.textContent = s.btn[0]; b.onclick = s.btn[1]; li.appendChild(b); }
+    ol.appendChild(li);
+  });
+  $("wizNote").textContent = cur < 0 ? T("Готово: метка настроена. Мастер можно скрыть.") : "";
+}
+$("wizHide").onclick = () => { $("wizCard").hidden = true; $("bWiz").hidden = false; try{ localStorage.setItem("wiz_hidden", "1"); }catch(e){} };
+$("bWiz").onclick = () => { $("wizCard").hidden = false; $("bWiz").hidden = true; try{ localStorage.removeItem("wiz_hidden"); }catch(e){} renderWiz(); };
+try{ if (localStorage.getItem("wiz_hidden") === "1"){ $("wizCard").hidden = true; $("bWiz").hidden = false; } }catch(e){}
+window.__wizOn = true;
+renderWiz();
 $("bModeGet").onclick = () => send("4F 03");
 $("bModeSet").onclick = () => {
   const clampW = v => Math.max(10, Math.min(250, Math.round(+v) || 60));

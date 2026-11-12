@@ -36,6 +36,8 @@ Unofficial project. Flashing replaces the original firmware of the tag; do it on
 
 If anything looks wrong, send nothing to the tag and keep the backup; the original firmware can be written back from the backup with the same script.
 
+**First start with the wizard:** after connecting, the card "First start: step-by-step check" at the top of the page walks through the steps below (connect, firmware version, orientation, first picture, first draw, slideshow) and ticks each one from what the tag reports; "Hide the wizard" hides it (the button "First-start wizard" brings it back).
+
 ## 2. First connection (the 120-second window)
 
 The tag starts in **standalone mode**: Bluetooth is on **only for 120 s after power-up** (and for 60 s after every tap, see below). A short **blue flash every 5 seconds** means "the window is open and nobody is connected".
