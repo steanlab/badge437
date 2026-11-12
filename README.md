@@ -8,11 +8,22 @@ Own firmware and a web control page for the **Hanshow Nebular Pro 437Q-N**: a 4.
 
 Unofficial: not affiliated with Hanshow, Telink, OpenDisplay or OpenEPaperLink. **Flashing replaces the original firmware of your tag and needs a programmer wire; use it at your own risk, no warranty.** Tested so far on **one** tag.
 
+## Read this first: two stages
+
+A tag comes with the original Hanshow firmware, and **it cannot be updated over Bluetooth or from the page**. Our firmware gets onto the tag in two stages:
+
+| Stage | How | When |
+|---|---|---|
+| **1. First installation** | **With a programmer wire (Telink SWS, four wires to pads on the board), once.** You back up the original flash of your tag first, then write `firmware/n437_0.9d.bin`. See the [user guide](docs/USER_GUIDE.md), section 1 | once per tag; **there is no way around it**: without a programmer the tag stays original |
+| **2. Everything afterwards** | **Over Bluetooth from the page**: pictures, settings and **firmware updates (OTA)**; no wires | every later change; OTA needs firmware 0.9 or later already running on the tag |
+
+So: if you do not have (or do not want to build) a programmer, this project is not for you yet. If you do, do stage 1 once and forget the wire.
+
 ## What it does
 
 | | |
 |---|---|
-| Pictures | Up to 24 pictures ("slots") are stored in the tag's flash and survive power loss. A picture is 176 x 480 pixels in four colours (white, black, dark red, yellow) or, with the page's "7 colours" option, seven (adds orange, grey, dark grey; needs 0.9d); the page converts any image (fit, rotation, dithering, brightness / contrast, preview) and uploads it compressed (a flat graphic takes a few hundred bytes, a dithered photo about 90 % of the raw 21 120 bytes) |
+| Pictures | Up to 24 pictures ("slots") are stored in the tag's flash and survive power loss. A picture is 176 x 480 pixels in four colours (white, black, dark red, yellow) or, with the page's "8 colours" option, eight (adds orange, ochre, grey, dark grey; needs 0.9d); the page converts any image (fit, rotation, dithering, brightness / contrast, preview) and uploads it compressed (a flat graphic takes a few hundred bytes, a dithered photo about 90 % of the raw 21 120 bytes) |
 | Slideshow | Slides change by timer (1 minute to 18 hours), the tag sleeps in between; a slide also changes when you **touch the tag with a phone (NFC tap = next slide)** |
 | Two operating modes | **Standalone** (default): Bluetooth is only on for a window after power-up and after a tap, deep sleep otherwise, to save the battery. **OpenDisplay**: always connectable, works with the OpenDisplay web tool and Home Assistant (direct write of one picture) |
 | LED | Short, dim flashes tell the state (window open, linked, slide change, error); can be reduced |
@@ -32,19 +43,23 @@ Unofficial: not affiliated with Hanshow, Telink, OpenDisplay or OpenEPaperLink. 
 |---|---|
 | [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md), [`docs/USER_GUIDE.ru.md`](docs/USER_GUIDE.ru.md) | users: flash, first start, page, modes, LED, NFC, slideshow, OTA, problems |
 | [`firmware/RELEASE_NOTES.md`](firmware/RELEASE_NOTES.md) | what is in 0.9d, what was tested on a tag, what is not done, history |
-| [`docs/HARDWARE.md`](docs/HARDWARE.md) | **for those who want to write their own firmware**: everything found out about the tag (MCU, pins, flash map and what must never be written, panel, NFC, LED, power, Telink pitfalls) |
-| [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | Bluetooth commands of the firmware, OpenDisplay subset, slot and image formats |
+| [`docs/HARDWARE.md`](docs/HARDWARE.md) | for those who want to write their own firmware: the tag (MCU, pins, flash map and what must never be written, panel basics, NFC, LED, power, Telink pitfalls); **not** the panel drive recipe |
+| [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | Bluetooth commands of the firmware, OpenDisplay subset, basic slot and image formats |
 
 ## Not done / limits (0.9d)
 
 * **No authentication.** In standalone mode anyone near the tag can connect during an open window (after power-up or a tap) and change pictures, settings and even upload firmware; the window is short and the physical tap or power cycle is the only protection. OpenDisplay encryption is not implemented.
 * The battery voltage is not measured yet and the energy consumption was not measured; no battery-life figure is given. The tag's cell is probably a non-rechargeable lithium cell (see the hardware notes): never charge it.
 * OTA rollback covers a faulty image that starts running; an image that is broken before its own start code runs, or hangs during its initialisation, needs the programmer. Power loss during an update was only tested in simulation, not on a tag.
-* Colours: the panel's own colours are pale and flat (black about 4.5 : 1 against white, dark red nearly as dark as black); the page dithers against ideal colours, so mid-tones come out lighter than the original. Measured on one tag. A draw takes longer than before (two passes, about 23 s estimated, not timed yet).
+* Colours: the panel's own colours are pale and flat (black about 4.5 : 1 against white, dark red nearly as dark as black); the page dithers against ideal colours, so mid-tones come out lighter than the original. Measured on one tag. A draw takes longer than before (two passes, about 28 s measured).
 * The firmware source code is not published (binary releases only).
 
 ## What is published here, and what is not
 
-Published: the page, released firmware binaries with checksums, guides, and the hardware notes that are safe to publish. **Not** published: flash dumps, the panel's waveform data, serial numbers and addresses of tags, the firmware source code, and analysis of the original firmware. If you write your own firmware you must read the data of your own tag from your own backup.
+Published: the page, released firmware binaries with checksums, guides, and the hardware notes that are safe to publish. **Not** published: flash dumps, the panel's waveform data and its layout, the panel drive sequence and the colour drive (two passes), the eight-colour slot formats, serial numbers and addresses of tags, the firmware source code, and analysis of the original firmware. If you write your own firmware you must read the data of your own tag from your own backup.
 
 Related projects by the same author: [frame970](https://github.com/steanlab/frame970) (the 9.7" tag), [badge154](https://github.com/steanlab/badge154) (the 1.54" tag).
+
+## Licence
+
+Copyright 2026 steanlab. The page, the firmware binaries and the documents of this repository are free for **personal, non-commercial use**; commercial use needs a written agreement with the author. Details: [`LICENSE.md`](LICENSE.md). Third-party parts and their terms: [`NOTICE.md`](NOTICE.md). Unofficial; no warranty.

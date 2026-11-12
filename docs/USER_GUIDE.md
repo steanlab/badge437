@@ -4,6 +4,8 @@ Repo path: `steanlab/badge437` (public) → `docs/USER_GUIDE.md`. Russian: `docs
 
 Unofficial project. Flashing replaces the original firmware of the tag; do it only if you accept that, at your own risk. Tested on one tag.
 
+**Two stages:** the first installation needs a programmer wire (once, section 1); after that everything, including firmware updates (OTA), is done over Bluetooth from the page. The original firmware cannot be updated over Bluetooth.
+
 ## 0. What you need
 
 * A Hanshow Nebular Pro 437Q-N (4.37", 176 x 480 four-colour). Check the marking on the board: `HSEL4Q_04_37M_32` (a different Nebular model has a different panel and different pins; this firmware is for the 437Q-N only).
@@ -47,7 +49,7 @@ The tag starts in **standalone mode**: Bluetooth is on **only for 120 s after po
 
 Card "New picture":
 
-1. Choose an image file; it is fitted to 176 x 480 pixels (portrait in the preview; use the rotation if your picture is landscape). Options: fill (crop) / whole (white margins) / stretch, rotation, **dithering** (Floyd-Steinberg for photos, Atkinson for drawings and text, ordered, none), brightness and contrast, and **colours**: 4 (white, black, dark red, yellow) or 7 (adds orange and two greys; needs firmware 0.9d; the picture is stored as two planes, 20 to 40 KB, so fewer fit). The preview shows ideal colours; the panel itself is paler and flatter (black is a dark grey, dark red nearly as dark as black).
+1. Choose an image file; it is fitted to 176 x 480 pixels (portrait in the preview; use the rotation if your picture is landscape). Options: fill (crop) / whole (white margins) / stretch, rotation, **dithering** (Floyd-Steinberg for photos, Atkinson for drawings and text, ordered, none), brightness and contrast, and **colours**: 4 (white, black, dark red, yellow) or 8 (adds orange, ochre and two greys; needs firmware 0.9d; the picture is stored as two planes, 20 to 40 KB, so fewer fit). The preview shows ideal colours; the panel itself is paler and flatter (black is a dark grey, dark red nearly as dark as black).
 2. Choose the slot (0 to 23) and press "Upload". The page tries three storage formats and sends the smallest. A progress bar shows it; keep the page open and stay near the tag.
 3. The slot list updates; in the list use **show** (draw this slot now, 20 to 25 seconds (two passes), the panel flashes during the refresh), **verify** (read it back and check the CRC) and **erase**. "Erase all slots" empties every slot.
 

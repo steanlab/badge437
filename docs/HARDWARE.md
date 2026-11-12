@@ -9,7 +9,7 @@ This is what was found out while writing the firmware, written for someone who w
 * **[data]**: read from the data of the tags we have (flash backups of three tags);
 * **[assumed]**: taken from the sister tags (154QN, 970Q-N), not checked here.
 
-What is deliberately **not** in this document: contents of any flash backup, the panel waveform data, serial numbers, addresses, and the analysis of the original firmware. **Your own tag's waveform data is in your own backup; you need it, and nobody else's will do** (see section 5). Make the backup before you write anything (section 2).
+What is deliberately **not** in this document: contents of any flash backup, the panel waveform data and its layout, the panel command sequence and the drive of the colours, serial numbers, addresses, and the analysis of the original firmware. **Your own tag's waveform data is in your own backup; you need it, and nobody else's will do** (see section 5). Make the backup before you write anything (section 2).
 
 ## 1. The tag
 
@@ -75,64 +75,26 @@ Rules our firmware follows, and you should too: write only inside a window that 
 
 ## 5. The panel waveform block (`0x78000`)
 
-The stock firmware does not contain the drive waveforms of the panel; it reads them from a block of factory data in the tag's flash, **per panel lot**. The block is calibration data of your panel; **we do not publish any waveform data**. A firmware needs the block of its own tag. What you may rely on:
+The stock firmware does not contain the drive waveforms of the panel; it reads them from a block of factory data in the tag's flash, **per panel lot**. The block is calibration data of your panel; **we do not publish any waveform data or its internal layout**. A firmware needs the block of the tag it runs on, which is in **your own backup** (section 2); nobody else's will do.
 
-* **Location and size:** `0x78000`, `0x3000` bytes (12 KiB; the range up to `0x7BFFF` is kept free).
-* **CRC:** the first two bytes (little endian) are the CRC-16 (polynomial `0x1021`, initial value `0x1D0F`, MSB first, no final XOR) of the other `0x2FFE` bytes. **Check it before every draw and refuse to draw if it fails.** One tag we saw had a damaged part of the block; the stock firmware cannot draw on such a tag, the CRC check catches it.
-* **Header:** zero-separated production strings (model `S437`, `480`, `176`, panel lot, date), then at offset `+0x5F` a table of **8 temperature bands**, stride 20 bytes. Each entry: `lo` u16, `hi` u16 (1/100 degree C; the `lo` of the first entry must be read as 0), then the descriptor of the **long** record and the descriptor of the **short** record, each `type u8 (01 long / 02 short), length u16, flash address u24, 00`. The band table **differs between tags** and so does the record length (we saw 552 and 546 bytes): **read the table and the lengths from the header, never use fixed numbers.**
-* **Record:** `7 parameter bytes (p0..p6)`, then **528 table bytes**, then a tail. The tail is a 16-bit little-endian length followed by entries `command u8, length u8, data` (the stock draw routine looks entries up by command; entry `06` must be present). The waveform sent to the panel is the first 535 bytes (parameters + table).
-* **How it is used:** pick the band whose upper limit is above the panel temperature (section 6) and use its **long** record for pass 0; since 0.9b the **short** record of the same band is used for a second pass (section 7a).
+* **Location and size:** `0x78000`, `0x3000` bytes (12 KiB; the range up to `0x7BFFF` is kept free). **Never write or erase it.**
+* **Check it before every draw** (it carries a checksum in its first bytes) and **refuse to draw if the check fails**: one tag we saw had a damaged part of it and drew garbage.
 
 ## 6. Panel temperature
 
 The panel has a temperature sensor read through the data line: `CMD 41 00`, `CMD 40`, wait until BUSY goes high (about 12 ms), then read **two bytes**: the integer part in degrees C and the fraction in 1/256 (`17 80` = 23.5 C) [verified]. The reading is **too high right after a refresh and sometimes after a power-up**; our firmware ignores a value more than 8 C above the last good reading (younger than 30 minutes) and, if the reading is not usable, power-cycles the panel (2, 5, 10 s) and reads again. Draw only between -10 and +50 C.
 
-## 7. The panel sequence our firmware sends (one pass, about 18 s; a picture is two passes since 0.9b)
+## 7. Drawing the panel
 
-SPI-like, mode 0, **bit-banged**, MSB first (data set while the clock is low, sampled on the rising edge, the clock idles low). One command is one CS burst: CS low, DC low for the command byte, DC high for its data bytes, CS high. BUSY high = idle.
+The panel controller is driven bit-banged over its own SPI-like bus with the waveform records of the block above, in the order the stock firmware uses. **We do not publish the command sequence.** If you write your own firmware, derive it from the stock code in your own backup. A draw takes about 18 s per pass at room temperature. Do not start a draw if the waveform check failed or the temperature is out of range; a wrong picture does no harm, the next draw replaces it. Do not refresh more often than needed: the panel is not meant for fast updates.
 
-| Step | What | Note |
-|---|---|---|
-| 1 | panel power on: PB5 low, wait 100 ms | |
-| 2 | reset: RST low/high for 20 / 20 / 200 / 20 / 20 ms | |
-| 3 | temperature read (section 6), choose the band, load the long record | |
-| 4 | `4D 78`, `AE AF`, `BD 80`, `B0 13`, `AD 17`, `B6 0F`, `BA 2A` | init registers of this panel family |
-| 5 | `00` (two bytes from the record's tail entry `00`; default `07 A8`) | |
-| 6 | `01 07 p0 p1 p2 p3 p4` | `p0..p4` are record parameters |
-| 7 | `03` (tail entry `03`, default `10 54 44`) | |
-| 8 | `06` (tail entry `06`, **required**) | |
-| 9 | `30 p6` | |
-| 10 | `50 37` | |
-| 11 | `F0 7D` | |
-| 12 | `60` (tail entry `60`, default `02 02`) | |
-| 13 | `61 00 B0 01 E0` | resolution 176 x 480 |
-| 14 | `65` (tail entry `65`, default `00 20 00 00`) | |
-| 15 | `82 (p5 XOR 0x80)` | |
-| 16 | `E3`, `E7`, `E9` (tail entries; defaults `22`, `1C`, `01`) | |
-| 17 | `20` followed by the first **535 bytes of the record** (the waveform); wait BUSY high (at most 20 s) | |
-| 18 | `10` followed by **21 120 bytes** of pixels | |
-| 19 | `04`, wait BUSY high (at most 20 s) | power-on of the drive |
-| 20 | `12 00`, wait BUSY high (about 18 s at room temperature; allow up to 120 s) | **the refresh** |
-| 21 | `00 27 A9`, `02 00`, wait BUSY high, `07 A5` | power-off sequence, deep sleep of the controller |
-| 22 | panel power off: release PB5 | |
+## 7a. Colours
 
-If BUSY does not come back inside its limit, stop, switch the panel power off and signal an error. **Do not start a draw if the waveform CRC failed or the temperature is out of range.** A wrong picture does no harm; the next draw replaces it. Do not refresh more often than a few times a minute.
-
-## 7a. The second pass and the colours
-
-One long pass (section 7) draws all four colours, but **black comes out dark maroon**. The same controller family on the 970Q-N is driven in two passes; the 437Q-N works the same way:
-
-1. **Pass 0:** section 7 with the **long** record of the temperature band and `CMD 50` data `37`.
-2. Panel power off, **pause about 4 s** (starting pass 1 at once can leave its refresh silently skipped on the 970).
-3. **Pass 1:** the whole of section 7 again (power on, reset, temperature, init), but with the **short** record of the same band and `CMD 50` data `97`; the pixel data of pass 1 follow. (On the 970Q-N its refresh takes about 0.2 s; not timed on the 437Q-N.)
-
-Pixel values (2 bits) sent in `CMD 10` for each colour, pass 0 / pass 1: white 1 / 1, yellow 2 / 1, orange 0 / 1, dark red 3 / 1, black 1 / 0, grey 1 / 2, dark grey 1 / 3. In pass 1 the value 1 changes nothing, 0 adds black, 2 and 3 add two grey levels (tried only over white). Black needs pass 1; the single-pass code 3 is the dark red.
-
-Measured on one tag from raw phone photos in daylight, relative to the panel white (luminance Y and red / green ratio of the linear values; the panel white is about 0.50 of white paper): black block 0.23 (R/G 1.07, neutral), black bar next to white 0.30; dark red 0.28 to 0.32 (R/G 1.6); yellow 0.73 (R/G 1.4); grey 0.65 and dark grey 0.36 (neutral); orange (panel code 0) 0.4 (R/G 1.7, brown-orange). Black and dark red are nearly equally light; the panel's contrast, white to black, is about 4.5 : 1. A phone photo gives relative values only (no calibrated instrument); other panel lots and temperatures may differ.
+The panel shows white, yellow, orange, dark red, black and two greys. The colours come from **two drive passes** over the same picture (about 28 s in total, measured); a single pass cannot give a real black (it comes out dark maroon). Measured on one tag from raw phone photos in daylight, relative to the panel white: black about 0.21 of the white's luminance (contrast about 4.5 : 1), dark grey 0.36, grey 0.65, yellow 0.73, orange about 0.43, dark red about 0.30. **Blue and green cannot be shown** (no way to get blue above red); green can only be suggested as olive by mixing yellow with a dark colour. The page uses eight colours (white, black, dark red, yellow, orange, ochre, grey, dark grey) and dithers against them. The drive details are not published.
 
 ## 8. Picture format
 
-A frame is **480 lines of 44 bytes**: 176 pixels, **2 bits per pixel, four pixels per byte, the first pixel in bits 7..6**; 21 120 bytes. The panel codes with our default colour table are **black 3, white 1, yellow 2, red 0** [verified] (OpenDisplay colour numbers: black 0, white 1, yellow 2, red 3; our firmware maps them with a table, `docs/PROTOCOL.md`). Line 0 is at the top when the flex cable is at the top of the picture. With the pixels of a line sent in their natural order the picture appeared **mirrored left to right** (flex cable at the top); reversing the pixels inside every line (our setting `mode` bit 1) corrects it [verified].
+A frame is **480 lines of 44 bytes**: 176 pixels, **2 bits per pixel, four pixels per byte, the first pixel in bits 7..6**; 21 120 bytes. Line 0 is at the top when the flex cable is at the top of the picture. With the pixels of a line sent in their natural order the picture appeared **mirrored left to right** (flex cable at the top); reversing the pixels inside every line (our setting `mode` bit 1) corrects it [verified].
 
 ## 9. NFC
 
@@ -165,8 +127,8 @@ A frame is **480 lines of 44 bytes**: 176 pixels, **2 bits per pixel, four pixel
 
 * Current consumption in any mode; the battery chemistry (inferred only); the battery voltage thresholds of this cell.
 * Contents and purpose of the panel's own 6144-byte data block (read with `CMD 92`); it is not needed for drawing.
-* How the panel's colours behave over temperature: drawing the four colour bands with the records of ranges 4, 5, 6 and 7 at 21 C looked the same to the eye; no measurements at other temperatures.
-* Partial refresh. The values of pass 1 over a colour other than white (only white was tried).
+* How the panel's colours behave over temperature (looked the same to the eye at 21 C across the records we tried); no measurements at other temperatures.
+* Partial refresh.
 * The behaviour on other panel lots than the one we have.
 
 Corrections are welcome: open an issue with what you measured and how.

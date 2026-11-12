@@ -14,11 +14,11 @@ Repo path: `steanlab/badge437` (public) → `firmware/RELEASE_NOTES.md`. Release
 
 ## What is new since 0.9a
 
-* **Two-pass drawing: a real black.** One long pass draws all four colours, but black comes out dark maroon (contrast about 3.8 : 1 against white, a red tint). 0.9d adds the second, **short pass** (the short waveform record of the same temperature range, after a 4 s pause) that adds the black: black is now neutral and about 4.5 : 1 against white. A draw takes longer than the 18 s of 0.9a: estimated about **23 s** (18 s + 4 s pause + a short second refresh; **not timed yet**). Details in [`docs/HARDWARE.md`](../docs/HARDWARE.md) section 7a.
-* **Red is the panel's dark red.** The 0.9a colour table drew "red" with panel code 0, which is an orange-brown; 0.9d draws it with panel code 3 (dark red). The colour table setting `lut` keeps its default `27`; with that default the firmware draws in two passes with fixed tables, any other value draws one pass with that table as 0.9a did ([`docs/PROTOCOL.md`](../docs/PROTOCOL.md)).
-* **Seven colours** (page: "colours" = 7): white, yellow, orange, dark red, black, grey, dark grey. New slot formats 3, 4, 5 hold two planes of panel codes, one per pass (PROTOCOL.md sections 3 and 4). The four-colour formats 0, 1, 2 and OpenDisplay work as before.
+* **Two-pass drawing: a real black.** One drive pass draws all four colours, but black comes out dark maroon (contrast about 3.8 : 1 against white, a red tint). 0.9d draws a picture in two passes: black is now neutral and about 4.5 : 1 against white. A draw takes longer than the 18 s of 0.9a: about **28 s** measured (18 s + pause + a short second pass of 2 s). The drive details are not published.
+* **Red is the panel's dark red.** The 0.9a colour table drew "red" as an orange-brown; 0.9d draws the panel's dark red. The colour table setting `lut` keeps its default `27`; with that default the firmware draws in two passes, any other value draws one pass as 0.9a did ([`docs/PROTOCOL.md`](../docs/PROTOCOL.md)).
+* **Eight colours** (page: "colours" = 8): white, yellow, orange, ochre, dark red, black, grey, dark grey. New slot formats 3, 4, 5 hold the pictures of the two passes (made by the page; not documented). The four-colour formats 0, 1, 2 and OpenDisplay work as before.
 * **Default orientation** of fresh settings is now "mirrored horizontally" (`mode 2`), which is the right one for this panel. Tags that already store `mode 0` keep it until you set it ([user guide](../docs/USER_GUIDE.md) section 2).
-* Diagnostic command `30 pp mm rr`: `rr` (0..7) forces the waveform record of that temperature range. The author drew the four colour bands with ranges 4, 5, 6 and 7 and saw no difference in the colours; the refresh takes 27 s with range 4 and 14 s with range 7 (18 s at room temperature with the range chosen by the sensor).
+* The temperature range of the drive was forced to other values in a test build and the colours looked the same; the draw time changes (14 to 27 s).
 * Page: colour selector (4 / 7), brightness and contrast on separate rows, format names for the new formats.
 
 ## What is in it (since earlier versions)
@@ -40,10 +40,10 @@ Tested by the author on the **same one tag** (powered from the programmer, no ba
 | OTA from 0.9a through test builds up to 0.9d, pictures kept | works |
 | Second pass alone over a white fill (`30 00 02`, then `30 01 00`; 0.9a) | black, grey and dark grey bands over white: black 0.21, dark grey 0.36, grey 0.65 of the white's luminance |
 | Built-in picture (`46 00`, `45 00`) in two passes (0.9c) | neutral black, white, yellow, dark red as intended; black about 4.4 : 1 against white in a large block |
-| A seven-colour photo from the page (Floyd-Steinberg, slot 6, 26 KB LZ plane format; 0.9d) | drawn; orange, greys, dark red, yellow and black visible; the author judged it good by eye |
-| Waveform ranges 4 to 7 forced by `30 00 00 rr` (0.9bt) | the colours looked the same; refresh 27 s / 18 s / 18 s / 14 s |
+| A photo from the page in the eight-colour mode (Floyd-Steinberg, 26 KB; 0.9d) | drawn; orange, ochre, greys, dark red, yellow and black visible; the author judged it good by eye |
+| Other temperature ranges forced (test build 0.9bt) | the colours looked the same; refresh 27 s / 18 s / 18 s / 14 s |
 
-**Not tested on a tag:** four-colour pictures from the page (formats 1, 2) drawn with the two-pass path of 0.9d; slideshow, NFC tap and clean-up draws with two passes; OpenDisplay writes with 0.9d; the grey levels over anything but white (the page never puts them there); power loss during an OTA upload, commit or rollback (simulated on a PC only); a second tag; battery operation and current consumption; OpenDisplay from Home Assistant.
+**Tested on a tag since:** four-colour LZ picture drawn in two passes, slideshow change by NFC tap with both formats (12 Nov 2026, author's report). **Not tested on a tag:** OpenDisplay writes with 0.9d; clean-up draws with two passes; battery and current (no instrument).
 
 ## Known issues and limits
 
@@ -54,7 +54,7 @@ Tested by the author on the **same one tag** (powered from the programmer, no ba
 5. **Rollback limits:** it covers images that begin to run; a broken start-up code or a hang during initialisation needs the programmer. The step from 0.8 to 0.9 has no rollback.
 6. **First start formatting:** the first start after flashing erases the data area (about 4 s); settings of older versions are lost then. An OTA update from 0.9 or later keeps them.
 7. Only images whose text contains `N437 fw 437-` are accepted by OTA; the OpenDisplay config reports `Firmware 1.0` and the build in the SHA string.
-8. The seven-colour mode needs this firmware; an older firmware refuses the new formats (`UP FAIL bad length or format`).
+8. The eight-colour mode needs this firmware; an older firmware refuses the new formats (`UP FAIL bad length or format`).
 
 ## History (short)
 
@@ -68,7 +68,7 @@ Tested by the author on the **same one tag** (powered from the programmer, no ba
 | 0.8 | OTA over Bluetooth, two image areas |
 | 0.9 / 0.9a | trial and rollback; 0.9a: watchdog armed after the initialisation (released) |
 | 0.9b / 0.9c | two-pass drawing, dark red as red (test builds, not released) |
-| 0.9d | seven colours, two-plane slot formats, default orientation (this release) |
+| 0.9d | eight colours, two-plane slot formats, default orientation (this release) |
 
 ## Memory layout (data is not kept across layout changes)
 
