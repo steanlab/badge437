@@ -334,6 +334,25 @@ function toFrame(idx){
    the panel shows its own (black and the greys are lighter, see docs/COLOR_CALIBRATION.md). Panel codes per pass: pass 0 (long record) white 1, yellow 2, orange 0, dark red 3,
    black and the greys 1 (white); pass 1 (short record) adds black 0, grey 2, dark grey 3, nothing 1. */
 const PAL7 = [[255,255,255],[0,0,0],[200,30,30],[235,200,20],[235,120,20],[170,170,170],[85,85,85]];
+
+/* 7-colour decision (page "пункт 1"): the panel greys are lighter than ideal ones (measured, relative to panel white: black 0.21, dark grey 0.36, grey 0.65, white 1.0),
+   so the achromatic part of the picture is compressed into that range and the greys are chosen at their measured sRGB values. Saturated pixels (red, yellow, orange) are left alone,
+   the compression is weighted by (1 - saturation). PAL7 stays the preview palette, PAL7D is only used for the decision and the diffused error. */
+const BLK7 = 0.21;
+const PAL7D = [[255,255,255],[128,128,128],[200,30,30],[235,200,20],[235,120,20],[212,212,212],[163,163,163]];
+const s2l = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+const l2s = v => 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055);
+function tone7(f){
+  const o = new Float32Array(f.length);
+  for (let j = 0; j < f.length; j += 3){
+    const r = f[j], g = f[j+1], b = f[j+2], mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx > 0 ? (mx - mn) / mx : 0, w = Math.max(0, 1 - 2 * sat);
+    const lr = s2l(r), lg = s2l(g), lb = s2l(b), L = 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+    const L2 = L + w * (BLK7 + (1 - BLK7) * L - L);
+    const k = L > 1e-4 ? L2 / L : 0, add = L > 1e-4 ? 0 : w * BLK7;
+    o[j] = Math.min(255, l2s(Math.min(1, lr * k + add))); o[j+1] = Math.min(255, l2s(Math.min(1, lg * k + add))); o[j+2] = Math.min(255, l2s(Math.min(1, lb * k + add)));
+  }
+  return o;
+}
 const P0_7 = [1, 1, 3, 2, 0, 1, 1];
 const P1_7 = [1, 0, 1, 1, 1, 2, 3];
 /* palette indices (PAL7) -> two planes of panel codes, 480 lines of 44 bytes each, 4 pixels per byte, first pixel in bits 7..6 */
@@ -769,7 +788,8 @@ function render(){
   g.imageSmoothingQuality = "high";
   g.drawImage(srcImg, -iw / 2, -ih / 2, iw, ih);
   const seven = $("pal").value === "7", pal = seven ? PAL7 : PAL;
-  const idx = quantize(prepare(g.getImageData(0, 0, W, H).data, +$("bri").value, +$("con").value), $("dith").value, pal);
+  const pf = prepare(g.getImageData(0, 0, W, H).data, +$("bri").value, +$("con").value);
+  const idx = seven ? quantize(tone7(pf), $("dith").value, PAL7D) : quantize(pf, $("dith").value, pal);
   const pv = $("prev").getContext("2d"), im = pv.createImageData(W, H);
   for (let i = 0; i < W * H; i++){ const p = pal[idx[i]]; im.data[i*4] = p[0]; im.data[i*4+1] = p[1]; im.data[i*4+2] = p[2]; im.data[i*4+3] = 255; }
   pv.putImageData(im, 0, 0);
