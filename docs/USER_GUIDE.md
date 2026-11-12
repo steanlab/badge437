@@ -8,33 +8,64 @@ Unofficial project. Flashing replaces the original firmware of the tag; do it on
 
 ## 0. What you need
 
-* A Hanshow Nebular Pro 437Q-N (4.37", 176 x 480 four-colour). Check the marking on the board: `HSEL4Q_04_37M_32` (a different Nebular model has a different panel and different pins; this firmware is for the 437Q-N only).
-* A programmer for the Telink SWS wire: the same one as for the other Nebular tags of this author (a Raspberry Pi Pico with the Hanshow bridge firmware and the script `nebular_debug_custom.py`; see [frame970](https://github.com/steanlab/frame970) `firmware/FLASHING.md` for the build and the wiring of the programmer). Four wires to the pads on the MCU side of the board: `NRST`, `SWS`, `GND` and `VCC` (3.3 V from the programmer; the tag does not need its battery while you flash).
-* Chrome or Edge with Web Bluetooth: Android phone (also gives NFC), Windows, macOS, Linux, ChromeOS. **Not** iPhone / iPad, **not** Firefox / Safari.
-* About 20 minutes the first time.
+* **The tag:** Hanshow Nebular Pro 437Q-N (4.37", 176 x 480 four-colour). The marking `HSEL4Q_04_37M_32` is on the board; a different Nebular model has another panel and other pins, this firmware is for the 437Q-N only.
+* **A programmer** that talks to the Telink single-wire debug interface (SWS) of the tag. Here it is the open **RP2040 bridge by Gerard780** ([github.com/gerard780/hanshow-rp2040-programmer](https://github.com/gerard780/hanshow-rp2040-programmer), MIT licence): a small RP2040 board with the bridge firmware **v1.6**, one **1 kOhm resistor** and five short wires.
+  * Recommended board: **Waveshare RP2040-Zero**, with the ready firmware `dist/hanshow_pio_bridge.uf2` from that repository (SHA-256 `55a226a09190eaf8bae327b0671f9c1d1d261f7001a51e233e2f23a95c454a51`). To install it: hold the BOOT button while plugging in USB, copy the file to the drive `RPI-RP2`. This flashes the **programmer**, not the tag.
+  * The author used a **Raspberry Pi Pico** with the same firmware source built with other GPIO numbers (a few GPIOs of that particular board were dead). You do not need that; the signals are the same, only the GPIO numbers differ.
+* **A computer:** the author used **Ubuntu Linux with Python 3.12.3** (pyserial 3.5). Windows and macOS were not used for this tag. On Ubuntu your user must be allowed to use the serial port: `sudo usermod -aG dialout $USER`, then log out and in again.
+* **Wires to the tag:** thin wires soldered to the pads, or spring (pogo) probes held on them. The pads are small and flat.
+* **A phone or computer with Chrome or Edge** (Web Bluetooth) for the page afterwards: Android phone (also gives NFC), Windows, macOS, Linux, ChromeOS. **Not** iPhone / iPad, **not** Firefox / Safari.
+* About 30 minutes the first time.
+
+### Where the wires go
+
+The programming pads are in one row on the MCU side of the board (the side with the `Hanshow HS9118` module), at the top edge, left to right: `NRST  TX  RX  SWS  VCC  GND`. `TX` and `RX` are not needed for flashing.
+
+![Pads of the Nebular Pro 437Q-N and the programmer wires](img/board_pads.jpg)
+
+| RP2040-Zero (use the printed GPIO numbers, not Pico header pins) | Tag pad |
+|---|---|
+| `GP0`, **through a 1 kOhm resistor** | `SWS` |
+| `GP1`, directly (on the tag side of the resistor) | `SWS` |
+| `GP2` | `NRST` |
+| `3V3` | `VCC` |
+| `GND` | `GND` |
+| `GP5` (UART RX), optional | `TX` (only to read the tag's log; not needed) |
+
+These are the numbers of the ready UF2. If you build the bridge firmware yourself with other GPIOs, the roles stay: *SWS drive* through 1 kOhm, *SWS sense* direct, *reset* to `NRST`.
+
+* **Unplug USB while you wire.** The programmer's **3.3 V powers the tag**; the tag has **no battery** connected while you flash. Never feed the tag from the battery and the programmer at once, and **never connect 5 V / `VBUS` to `VCC`**.
+* Do not touch the panel's flat cable or its pads.
 
 ## 1. Flash it (once)
 
-1. **Keep the original.** The script reads the whole flash of the tag before it writes anything and stores it as a backup file. **Keep that file**: it holds the factory data of your panel (the waveform data the firmware needs, see [HARDWARE.md](HARDWARE.md)), the radio calibration and the factory record of your tag. Never publish it (it contains your tag's address). Run the dry run twice and compare the two backups if you like.
-2. Connect the wires. The programmer's 3.3 V powers the tag (the author flashed without the battery); never feed the tag from the battery and the programmer at the same time. Do not touch the pads of the panel.
-3. Dry run (backup and plan only, nothing is written):
+1. **Keep the original.** The software reads the whole flash of the tag before it writes anything and stores it as a backup file. **Keep that file**: it holds the factory data of your panel (the waveform data the firmware needs, see [HARDWARE.md](HARDWARE.md)), the radio calibration and the factory record of your tag. Never publish it (it contains your tag's address). Read the flash twice and compare the copies if you like.
+2. Wire as in section 0, then plug the programmer's USB into the computer.
+3. **Software.** The author's procedure (verified on this tag) used the command-line flasher `nebular_debug_custom.py` with the Hanshow bridge. It already knows the 437Q-N (flash id `EB 60 13`, factory record at `0x7E000`, application zone `0x00000`..`0x1FFFF`), refuses to write if the factory record is not the expected one, and writes only the changed sectors of the application zone. **That script is not distributed in this repository.** The same chip and flash are supported by the writing tools of the bridge repository (browser page "tools" and `flash_application.py`: single application `.bin`, two full reads, backup, write, verification, chip `026255` / flash `EB6013`); the author **has not tried them with this file**, and the repository itself calls their writing path experimental. With any tool: write `firmware/n437_0.9e.bin` at flash address `0x00000` only; never erase the whole chip; the factory data (`0x78000`..`0x7FFFF`) must stay as it is.
+4. With the author's script (Ubuntu, the programmer shows up as a USB serial port):
+
+   ```
+   python3 nebular_debug_custom.py --model 437 --list-ports
+   ```
+
+   The bridge must be in the list. Then the **dry run** (backup and plan only, nothing is written):
 
    ```
    python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9e.bin --no-questions --seconds 5
    ```
 
    It must end with `plan_verified` and no error. It refuses a tag whose flash protection status is not `2C`, or whose factory record it does not recognise: then stop and ask.
-4. Flash:
+5. **Flash:**
 
    ```
    python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9e.bin --apply --no-questions --seconds 5
    ```
 
    It must end with `whole_flash_verified` and `protection_restored`. Only the application zone (the first 128 KiB of the flash) is written; the factory data stays untouched.
-5. Remove the wires and give the tag power (battery in, or briefly connect the programmer's 3.3 V). The LED shows red, green, blue twice. For the first 4 seconds the firmware erases and formats its data area (that is normal; the panel stays as it was).
-6. Verify the file before flashing: `sha256sum -c SHA256SUMS.txt` in `firmware/`.
+6. Unplug USB, remove the wires and give the tag power (battery in). The LED shows red, green, blue twice. For the first 4 seconds the firmware erases and formats its data area (that is normal; the panel stays as it was).
+7. Check the file before flashing: `sha256sum -c SHA256SUMS.txt` in `firmware/`.
 
-If anything looks wrong, send nothing to the tag and keep the backup; the original firmware can be written back from the backup with the same script.
+If anything looks wrong, send nothing to the tag and keep the backup; the original firmware can be written back from the backup at address `0x00000` with the same tool (never overwrite `0x78000`..`0x7FFFF`).
 
 **First start with the wizard:** after connecting, the card "First start: step-by-step check" at the top of the page walks through the steps below (connect, firmware version, orientation, first picture, first draw, slideshow) and ticks each one from what the tag reports; "Hide the wizard" hides it (the button "First-start wizard" brings it back).
 

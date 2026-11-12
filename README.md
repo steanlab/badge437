@@ -14,7 +14,7 @@ A tag comes with the original Hanshow firmware, and **it cannot be updated over 
 
 | Stage | How | When |
 |---|---|---|
-| **1. First installation** | **With a programmer wire (Telink SWS, four wires to pads on the board), once.** You back up the original flash of your tag first, then write `firmware/n437_0.9e.bin`. See the [user guide](docs/USER_GUIDE.md), section 1 | once per tag; **there is no way around it**: without a programmer the tag stays original |
+| **1. First installation** | **With a programmer wire (Telink SWS: an RP2040 bridge, one 1 kOhm resistor and five wires to pads on the board; wiring, photo and commands in the guide), once.** You back up the original flash of your tag first, then write `firmware/n437_0.9e.bin`. See the [user guide](docs/USER_GUIDE.md), sections 0 and 1 | once per tag; **there is no way around it**: without a programmer the tag stays original |
 | **2. Everything afterwards** | **Over Bluetooth from the page**: pictures, settings and **firmware updates (OTA)**; no wires | every later change; OTA needs firmware 0.9 or later already running on the tag |
 
 So: if you do not have (or do not want to build) a programmer, this project is not for you yet. If you do, do stage 1 once and forget the wire.
