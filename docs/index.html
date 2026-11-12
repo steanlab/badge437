@@ -81,7 +81,10 @@ details.card[open]>summary{margin-bottom:8px}
         <select id="rot"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></div>
       <div class="row"><label>растр</label>
         <select id="dith"><option value="fs">Флойд–Стейнберг (фото)</option><option value="atk">Аткинсон (гравюры, текст)</option><option value="bay">упорядоченный (сжимается лучше)</option><option value="none">без растра</option></select></div>
-      <div class="row"><label>яркость</label><input type="range" id="bri" min="-60" max="60" value="0"> <label>контраст</label><input type="range" id="con" min="-60" max="60" value="0"></div>
+      <div class="row"><label>цвета</label>
+        <select id="pal"><option value="4">4 цвета (белый, чёрный, красный, жёлтый)</option><option value="7">7 цветов (прошивка 0.9d)</option></select></div>
+      <div class="row"><label>яркость</label><input type="range" id="bri" min="-60" max="60" value="0"></div>
+      <div class="row"><label>контраст</label><input type="range" id="con" min="-60" max="60" value="0"></div>
       <div class="row"><label>в слот</label><select id="slot"></select>
         <button class="pri nc" id="bUp" disabled>Загрузить</button><button class="nc" id="bUpStop" disabled>Прервать</button></div>
       <div class="row"><label>запись</label>
@@ -227,6 +230,23 @@ function packFrame(frame){
   }
   return best;
 }
+/* 7-colour pictures (firmware 0.9d): two planes of panel codes, plane 0 for pass 0, plane 1 for pass 1, 21 120 bytes each; the stream is 960 lines.
+   Formats: 3 raw (42 240 bytes), 4 LZ, 5 LZ with the line XOR applied to each plane separately (the chain restarts at line 480). Returns the smallest, round trip verified. */
+function packPlanes(p0, p1){
+  const n = p0.length, cat = (a, b) => { const o = new Uint8Array(a.length + b.length); o.set(a); o.set(b, a.length); return o; };
+  const raw = cat(p0, p1);
+  let best = { fmt: 3, data: raw };
+  for (const fmt of [4, 5]){
+    const src = fmt === 5 ? cat(xorLines(p0, 44), xorLines(p1, 44)) : raw;
+    const s = lzEncode(src);
+    if (s.length < best.data.length){
+      const back = lzDecode(s, 2 * n);
+      const un = fmt === 5 ? cat(unxorLines(back.subarray(0, n), 44), unxorLines(back.subarray(n), 44)) : back;
+      if (un.every((v, k) => v === raw[k])) best = { fmt, data: s };
+    }
+  }
+  return best;
+}
 
 /* ================= picture -> 4 colours -> frame (pure functions, tested in Node) ================= */
 const W = 176, H = 480, LB = 44, FRAME_LEN = 21120;
@@ -257,26 +277,27 @@ function prepare(rgba, bri, con){
   return f;
 }
 
-function nearest(r, g, b){
+function nearest(r, g, b, pal){
+  const P = pal || PAL;
   let bi = 0, bd = 1e18;
-  for (let c = 0; c < 4; c++){
-    const dr = r - PAL[c][0], dg = g - PAL[c][1], db = b - PAL[c][2], d = dr * dr + dg * dg + db * db;
+  for (let c = 0; c < P.length; c++){
+    const dr = r - P[c][0], dg = g - P[c][1], db = b - P[c][2], d = dr * dr + dg * dg + db * db;
     if (d < bd){ bd = d; bi = c; }
   }
   return bi;
 }
 
 /* f: float RGB from prepare(); mode: fs | atk | bay | none; result: palette index per pixel (row-major, W x H) */
-function quantize(f, mode){
-  const idx = new Uint8Array(W * H);
+function quantize(f, mode, pal){
+  const P = pal || PAL, idx = new Uint8Array(W * H);
   if (mode === "none"){
-    for (let p = 0; p < W * H; p++) idx[p] = nearest(f[p*3], f[p*3+1], f[p*3+2]);
+    for (let p = 0; p < W * H; p++) idx[p] = nearest(f[p*3], f[p*3+1], f[p*3+2], P);
     return idx;
   }
   if (mode === "bay"){
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){
       const p = y * W + x, t = (BAYER8[(y & 7) * 8 + (x & 7)] + 0.5) / 64 - 0.5, s = 110 * t;
-      idx[p] = nearest(f[p*3] + s, f[p*3+1] + s, f[p*3+2] + s);
+      idx[p] = nearest(f[p*3] + s, f[p*3+1] + s, f[p*3+2] + s, P);
     }
     return idx;
   }
@@ -288,10 +309,10 @@ function quantize(f, mode){
     for (let kx = 0; kx < W; kx++){
       const x = ltr ? kx : W - 1 - kx, p = y * W + x;
       const r = w[p*3], g = w[p*3+1], b = w[p*3+2];
-      const c = nearest(r, g, b);
+      const c = nearest(r, g, b, P);
       idx[p] = c;
       const cl = v => Math.max(-96, Math.min(96, v));                 // keep the error bounded for colours the panel cannot reach
-      const er = cl(r - PAL[c][0]), eg = cl(g - PAL[c][1]), eb = cl(b - PAL[c][2]);
+      const er = cl(r - P[c][0]), eg = cl(g - P[c][1]), eb = cl(b - P[c][2]);
       if (fs){
         push(x + dx, y, er, eg, eb, 7/16); push(x - dx, y + 1, er, eg, eb, 3/16); push(x, y + 1, er, eg, eb, 5/16); push(x + dx, y + 1, er, eg, eb, 1/16);
       } else {                                                        // Atkinson: only 6/8 of the error is passed on
@@ -308,6 +329,21 @@ function toFrame(idx){
   const out = new Uint8Array(FRAME_LEN);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) out[y * LB + (x >> 2)] |= OD[idx[y * W + x]] << (6 - 2 * (x & 3));
   return out;
+}
+/* 7 colours (firmware 0.9d, two passes). Index: white, black, dark red, yellow, orange, grey, dark grey; the colours used for the decision and the preview are ideal screen colours,
+   the panel shows its own (black and the greys are lighter, see docs/COLOR_CALIBRATION.md). Panel codes per pass: pass 0 (long record) white 1, yellow 2, orange 0, dark red 3,
+   black and the greys 1 (white); pass 1 (short record) adds black 0, grey 2, dark grey 3, nothing 1. */
+const PAL7 = [[255,255,255],[0,0,0],[200,30,30],[235,200,20],[235,120,20],[170,170,170],[85,85,85]];
+const P0_7 = [1, 1, 3, 2, 0, 1, 1];
+const P1_7 = [1, 0, 1, 1, 1, 2, 3];
+/* palette indices (PAL7) -> two planes of panel codes, 480 lines of 44 bytes each, 4 pixels per byte, first pixel in bits 7..6 */
+function toPlanes(idx){
+  const a = new Uint8Array(FRAME_LEN), b = new Uint8Array(FRAME_LEN);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){
+    const c = idx[y * W + x], sh = 6 - 2 * (x & 3), o = y * LB + (x >> 2);
+    a[o] |= P0_7[c] << sh; b[o] |= P1_7[c] << sh;
+  }
+  return [a, b];
 }
 const sectorsFor = len => Math.ceil((256 + len) / 4096);
 
@@ -418,6 +454,13 @@ const EN = {
   "нет соединения": "not connected",
   "ошибка отправки: ": "send error: ",
   "Прошивка метки ({0}) старше 0.5: слоты фиксированные и сжатие не поддерживается. Загрузка будет отключена; обновите прошивку.": "The tag firmware ({0}) is older than 0.5: fixed slots, no compression. Uploading is disabled; update the firmware.",
+  "цвета": "colours",
+  "4 цвета (белый, чёрный, красный, жёлтый)": "4 colours (white, black, red, yellow)",
+  "7 цветов (прошивка 0.9d)": "7 colours (firmware 0.9d)",
+  "7 цветов, без сжатия": "7 colours, uncompressed",
+  "7 цветов, LZ": "7 colours, LZ",
+  "7 цветов, LZ + строки": "7 colours, LZ + lines",
+  "К загрузке: {0}, {1} КБ из {5} КБ ({2} %), займёт {3} из {4} секторов.": "To upload: {0}, {1} KB of {5} KB ({2} %), takes {3} of {4} sectors.",
   "без сжатия": "uncompressed",
   "LZ": "LZ",
   "LZ + строки": "LZ + lines",
@@ -438,7 +481,6 @@ const EN = {
   "Загружено за {0} с. {1}. Теперь можно нажать «показать» в списке слотов.": "Uploaded in {0} s. {1}. Now press “show” in the slot list.",
   "загрузка не удалась: ": "upload failed: ",
   "Не удалось: ": "Failed: ",
-  "К загрузке: {0}, {1} КБ из 20.6 КБ ({2} %), займёт {3} из {4} секторов.": "To upload: {0}, {1} KB of 20.6 KB ({2} %), takes {3} of {4} sectors.",
   "не удалось прочитать картинку": "could not read the picture",
   "лог скопирован": "log copied",
   "не удалось скопировать: ": "could not copy: "
@@ -599,7 +641,7 @@ function lineHook(t){
 }
 
 let lastSum = null;
-const FMT_NAME = ["без сжатия", "LZ", "LZ + строки"];
+const FMT_NAME = ["без сжатия", "LZ", "LZ + строки", "7 цветов, без сжатия", "7 цветов, LZ", "7 цветов, LZ + строки"];
 function renderSlots(sum){
   const tb = $("slotRows");
   tb.textContent = "";
@@ -726,18 +768,19 @@ function render(){
   g.translate(W / 2, H / 2); g.rotate(rot * Math.PI / 180);
   g.imageSmoothingQuality = "high";
   g.drawImage(srcImg, -iw / 2, -ih / 2, iw, ih);
-  const idx = quantize(prepare(g.getImageData(0, 0, W, H).data, +$("bri").value, +$("con").value), $("dith").value);
+  const seven = $("pal").value === "7", pal = seven ? PAL7 : PAL;
+  const idx = quantize(prepare(g.getImageData(0, 0, W, H).data, +$("bri").value, +$("con").value), $("dith").value, pal);
   const pv = $("prev").getContext("2d"), im = pv.createImageData(W, H);
-  for (let i = 0; i < W * H; i++){ const p = PAL[idx[i]]; im.data[i*4] = p[0]; im.data[i*4+1] = p[1]; im.data[i*4+2] = p[2]; im.data[i*4+3] = 255; }
+  for (let i = 0; i < W * H; i++){ const p = pal[idx[i]]; im.data[i*4] = p[0]; im.data[i*4+1] = p[1]; im.data[i*4+2] = p[2]; im.data[i*4+3] = 255; }
   pv.putImageData(im, 0, 0);
-  frame = toFrame(idx);
-  packed = packFrame(frame);
-  const pct = Math.round(100 * packed.data.length / FRAME_LEN);
-  $("upinfo").textContent = T("К загрузке: {0}, {1} КБ из 20.6 КБ ({2} %), займёт {3} из {4} секторов.", T(FMT_NAME[packed.fmt]), (packed.data.length / 1024).toFixed(1), pct, sectorsFor(packed.data.length), lastSum ? lastSum.total : 49);
+  if (seven){ const pl = toPlanes(idx); frame = pl[0]; packed = packPlanes(pl[0], pl[1]); }
+  else { frame = toFrame(idx); packed = packFrame(frame); }
+  const base = seven ? 2 * FRAME_LEN : FRAME_LEN, pct = Math.round(100 * packed.data.length / base);
+  $("upinfo").textContent = T("К загрузке: {0}, {1} КБ из {5} КБ ({2} %), займёт {3} из {4} секторов.", T(FMT_NAME[packed.fmt]), (packed.data.length / 1024).toFixed(1), pct, sectorsFor(packed.data.length), lastSum ? lastSum.total : 49, (base / 1024).toFixed(1));
   $("prog").value = 0;
   refreshUp();
 }
-["fit", "rot", "dith", "bri", "con"].forEach(id => $(id).addEventListener("input", schedule));
+["fit", "rot", "dith", "pal", "bri", "con"].forEach(id => $(id).addEventListener("input", schedule));
 $("file").onchange = () => {
   const f = $("file").files[0];
   if (!f) return;
