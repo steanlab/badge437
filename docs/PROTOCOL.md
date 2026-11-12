@@ -1,6 +1,6 @@
-# n437 firmware 0.9e: Bluetooth commands and formats
+# n437 firmware 0.9f: Bluetooth commands and formats
 
-Repo path: `steanlab/badge437` (public) → `docs/PROTOCOL.md`. Companion: `docs/HARDWARE.md`. Firmware: `firmware/n437_0.9e.bin`. Date: 12 November 2026.
+Repo path: `steanlab/badge437` (public) → `docs/PROTOCOL.md`. Companion: `docs/HARDWARE.md`. Firmware: `firmware/n437_0.9f.bin`. Date: 12 November 2026.
 
 For people who write their own page or tool for this firmware, or their own firmware with the same formats. Most of it was exercised on a tag by the control page or the OpenDisplay tool; items marked *not tried* were not.
 
@@ -17,7 +17,7 @@ All numbers below are bytes; `len32`, `crc32`, `seq16`, `every16` are **little e
 
 | Command | Meaning / answer |
 |---|---|
-| `02` | status: boot counter, wake source, uptime, then `STATE mode= radio= wt= wb= img= tr= tn=` (and a `TRIAL ...` line after an update). `fw` shows the version |
+| `02` | status: boot counter, wake source, uptime, then `STATE mode= radio= wt= wb= img= tr= tn=` (and a `TRIAL ...` line after an update). `fw` shows the version; the `STATUS` line ends with `wf=1` (the panel data block passes its checksum) or `wf=0` (damaged, the tag will not draw; from 0.9f) |
 | `01 nn` | deep sleep (no retention) for `nn` seconds, then a cold start |
 | `04 nn` | after every wake stay connectable 10 s, then deep sleep `nn` s again (`00` stops) |
 | `40` | slot list: `slot N: fmt F, B bytes, S sectors, crc=...` per used slot and `slots: U used, F of 49 sectors free, largest run L, max 24 slots` |
@@ -86,7 +86,7 @@ Messages start with `00` and a command byte; the replies are `status cmd data`.
 | Message | Answer |
 |---|---|
 | `00 40` | configuration: 176 x 480, four colours (black, white, red, yellow), rotation 0, no encryption; packets 1, 2, 4 and 32 are answered |
-| `00 43` | firmware version (major 1, minor 0, length-prefixed build string `n437-437-0.9e`) |
+| `00 43` | firmware version (major 1, minor 0, length-prefixed build string `n437-437-0.9f`) |
 | `00 44` | manufacturer data record (company id + 14 bytes) |
 | `00 50` | authenticate: answers **status `03` (no encryption configured)** |
 | `00 70`, `00 71` ..., `00 72` | direct write: start, data chunks (230 bytes each in the tool we tried), end. **Uncompressed 21 120 bytes only** (a size field for compressed data is refused). The stream goes into the slot set by `4D` (default 23) and is drawn when it ends; `00 73` follows when the refresh is over |

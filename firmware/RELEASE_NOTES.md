@@ -1,18 +1,22 @@
-# n437 firmware 0.9e: release notes
+# n437 firmware 0.9f: release notes
 
 Repo path: `steanlab/badge437` (public) → `firmware/RELEASE_NOTES.md`. Release date: 12 November 2026. The previous releases, 0.9d (`firmware/n437_0.9d.bin`) and 0.9a (`firmware/n437_0.9a.bin`), stay in the repository.
 
 | | |
 |---|---|
-| File | `firmware/n437_0.9e.bin` (102 568 bytes) |
-| SHA-256 | `06a17e87c2644745e3a8705895bd4a617fae0920e8da4863fba3cd69fd16e692` (also in `firmware/SHA256SUMS.txt`; check with `sha256sum -c SHA256SUMS.txt`) |
-| Version string | `437-0.9e` (boot line `N437 fw 437-0.9e`) |
+| File | `firmware/n437_0.9f.bin` (102 656 bytes) |
+| SHA-256 | `67082e0249575a91fccba8bff273e728b3af75a83ecd8a2b9a469916860f5480` (also in `firmware/SHA256SUMS.txt`; check with `sha256sum -c SHA256SUMS.txt`) |
+| Version string | `437-0.9f` (boot line `N437 fw 437-0.9f`) |
 | Target | Hanshow Nebular Pro 437Q-N (Telink TLSR8258, 512 KiB flash, 4.37" 176 x 480 black / white / red / yellow panel) |
-| Header | `KNLT` at bytes 8..11, length field at 0x18 = file length = 102568 |
+| Header | `KNLT` at bytes 8..11, length field at 0x18 = file length = 102656 |
 | Install | with the programmer the first time ([user guide](../docs/USER_GUIDE.md)), later over Bluetooth (OTA) from 0.9 or later; the memory layout is unchanged, pictures and settings are kept |
 | Page | <https://steanlab.github.io/badge437/> (new slideshow card, thumbnails, splash switch) |
 
-## What is new since 0.9d
+## What is new in 0.9f
+
+* **Panel data check reported.** The `STATUS` line now ends with `wf=1` or `wf=0`: whether the waveform block at `0x78000` passes its checksum. The page shows a red notice when it does not (uploads still work; drawing does not). Nothing else changed; 0.9e features stay. The 0.9f file was built and the page was tested in a browser simulation; the new flag has not yet been seen on a tag.
+
+## What is new since 0.9d (0.9e)
 
 * **Boot splash.** After a power-up or restart the tag draws a black picture with **BADGE437 PROJECT** in big white letters and the firmware version under it (two passes, about 28 s). A restart after an update shows the new version. It can be switched off (card "Operating mode" or `4F 09 00`). With the slideshow on, the first slide follows 2 minutes after the splash.
 * **Slide order.** The slideshow can go in turn or in random order (random never repeats the slide that is on the panel). Setting `4F 08 n` or the new slideshow card of the page.
@@ -77,7 +81,8 @@ Tested by the author on the **same one tag** (powered from the programmer, no ba
 | 0.9 / 0.9a | trial and rollback; 0.9a: watchdog armed after the initialisation (released) |
 | 0.9b / 0.9c | two-pass drawing, dark red as red (test builds, not released) |
 | 0.9d | eight colours, two-plane slot formats, default orientation |
-| 0.9e | boot splash, slide order, no redraw of the same slide (this release) |
+| 0.9e | boot splash, slide order, no redraw of the same slide |
+| 0.9f | waveform block state in `STATUS` (`wf=`), notice on the page (this release) |
 
 ## Memory layout (data is not kept across layout changes)
 

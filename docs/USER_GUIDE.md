@@ -1,6 +1,6 @@
-# n437 firmware 0.9e: user guide
+# n437 firmware 0.9f: user guide
 
-Repo path: `steanlab/badge437` (public) → `docs/USER_GUIDE.md`. Russian: `docs/USER_GUIDE.ru.md`. Firmware: `firmware/n437_0.9e.bin`. Page: <https://steanlab.github.io/badge437/>.
+Repo path: `steanlab/badge437` (public) → `docs/USER_GUIDE.md`. Russian: `docs/USER_GUIDE.ru.md`. Firmware: `firmware/n437_0.9f.bin`. Page: <https://steanlab.github.io/badge437/>.
 
 Unofficial project. Flashing replaces the original firmware of the tag; do it only if you accept that, at your own risk. Tested on one tag.
 
@@ -9,6 +9,7 @@ Unofficial project. Flashing replaces the original firmware of the tag; do it on
 ## 0. What you need
 
 * **The tag:** Hanshow Nebular Pro 437Q-N (4.37", 176 x 480 four-colour). The marking `HSEL4Q_04_37M_32` is on the board; a different Nebular model has another panel and other pins, this firmware is for the 437Q-N only.
+* **A tag whose panel data is intact.** The tag keeps the drive data of its panel in its flash (the "waveform block"). Firmware that was on the tag before can have damaged it (we saw it on 2 of 4 tags that had run ATC_BLE_OEPL-based builds). Section 1 has a check; a damaged tag cannot draw until it is repaired.
 * **A programmer** that talks to the Telink single-wire debug interface (SWS) of the tag. Here it is the open **RP2040 bridge by Gerard780** ([github.com/gerard780/hanshow-rp2040-programmer](https://github.com/gerard780/hanshow-rp2040-programmer), MIT licence): a small RP2040 board with the bridge firmware **v1.6**, one **1 kOhm resistor** and five short wires.
   * Recommended board: **Waveshare RP2040-Zero**, with the ready firmware `dist/hanshow_pio_bridge.uf2` from that repository (SHA-256 `55a226a09190eaf8bae327b0671f9c1d1d261f7001a51e233e2f23a95c454a51`). To install it: hold the BOOT button while plugging in USB, copy the file to the drive `RPI-RP2`. This flashes the **programmer**, not the tag.
   * The author used a **Raspberry Pi Pico** with the same firmware source built with other GPIO numbers (a few GPIOs of that particular board were dead). You do not need that; the signals are the same, only the GPIO numbers differ.
@@ -58,14 +59,20 @@ These are the numbers of the ready UF2. If you build the bridge firmware yoursel
    The bridge must be in the list. Then the **dry run** (backup and plan only, nothing is written):
 
    ```
-   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9e.bin --no-questions --seconds 5
+   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9f.bin --no-questions --seconds 5
    ```
 
-   It must end with `plan_verified` and no error. It refuses a tag whose flash protection status is not `2C`, or whose factory record it does not recognise: then stop and ask.
+   It must end with `plan_verified` and no error. **Then check the backup it made** (file `before-1.bin` in the new folder `nebular-debug-<date>`):
+
+   ```
+   python3 tools/check_waveform.py nebular-debug-*/before-1.bin
+   ```
+
+   It must say `waveform block OK`. If it says `BAD`, **do not flash**: see section 8, "Damaged waveform block". It refuses a tag whose flash protection status is not `2C`, or whose factory record it does not recognise: then stop and ask.
 5. **Flash:**
 
    ```
-   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9e.bin --apply --no-questions --seconds 5
+   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9f.bin --apply --no-questions --seconds 5
    ```
 
    It must end with `whole_flash_verified` and `protection_restored`. Only the application zone (the first 128 KiB of the flash) is written; the factory data stays untouched.
@@ -167,6 +174,7 @@ Uploads are refused while a trial is open (the first seconds after a switch).
 | Panel shows a ghost of the previous picture | use the clean-up draw (`4A ... 01 02`), or draw twice |
 | "no room" on upload | free sectors are not contiguous; erase a slot (`40` in the developer card shows used slots, free sectors and the largest free run) |
 | The link drops during the refresh | normal with some phones; reconnect. The OpenDisplay tool reconnects by itself |
+| Damaged waveform block: the log says `waveform block CRC bad ... not drawing`, `STATUS` ends with `wf=0`, the page shows a red notice, `check_waveform.py` says BAD | The panel data in the tag's flash (`0x78000`..`0x7AFFF`) was damaged, usually by firmware that was on the tag before. Pictures can be uploaded but not shown. Not repairable from the page: it needs the programmer and an intact copy of the same block from a tag with the same panel data version (in the cases we saw only the sector `0x79000` was damaged). Keep the backup, do not post dumps, and ask in the Issues |
 | Nothing at all after flashing | check that the dry run said `plan_verified` and the flash `whole_flash_verified`; check the wires; try the power cycle; restore the backup if needed |
 | The tag restarts every 15 s | the watchdog is biting: report it with the full log of the page ("Save to file") |
 

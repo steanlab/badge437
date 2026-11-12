@@ -53,9 +53,9 @@ What is deliberately **not** in this document: contents of any flash backup, the
 
 Addresses are flash addresses; the Telink boot ROM starts from address 0. The stock firmware keeps its application at the bottom of the flash and its own data higher up; our firmware's first start **erases every non-blank sector of `0x40000`..`0x76FFF`** (what the stock firmware keeps there is in your backup). Layout of 0.9a:
 
-| Range | Use in our firmware 0.9e |
+| Range | Use in our firmware 0.9f |
 |---|---|
-| `0x00000`..`0x1FFFF` | **image A** (128 KiB; the programmer writes here; 0.9e is 102 568 bytes) |
+| `0x00000`..`0x1FFFF` | **image A** (128 KiB; the programmer writes here; 0.9f is 102 656 bytes) |
 | `0x20000`..`0x3FFFF` | **image B** (OTA target while A runs, and the other way round) |
 | `0x40000` | format marker (`N437FMT5`) |
 | `0x41000` | device name log |
@@ -79,6 +79,7 @@ The stock firmware does not contain the drive waveforms of the panel; it reads t
 
 * **Location and size:** `0x78000`, `0x3000` bytes (12 KiB; the range up to `0x7BFFF` is kept free). **Never write or erase it.**
 * **Check it before every draw** (it carries a checksum in its first bytes) and **refuse to draw if the check fails**: one tag we saw had a damaged part of it and drew garbage.
+* **It can be damaged by other firmware [verified on 2 of our 4 tags].** Two of our tags had the sector `0x79000` (the middle 4 KiB of the block) erased and rewritten with a few bytes before our firmware was ever flashed; both had run builds based on ATC_BLE_OEPL, which keep their settings in that sector. The stock tags we dumped (2) were intact. Check your backup with [`tools/check_waveform.py`](../tools/check_waveform.py) before flashing (the first two bytes of the block are a CRC16 of the rest). Firmware 0.9f also reports the state in the `STATUS` line (`wf=1` / `wf=0`).
 
 ## 6. Panel temperature
 

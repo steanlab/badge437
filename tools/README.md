@@ -11,3 +11,7 @@ The command-line flasher used for the first installation (see [`docs/USER_GUIDE.
 * Needs Python 3.9 or newer and `pyserial`, `pyusb`, `libusb-package` (`pip install pyserial pyusb libusb-package`). On its first run it downloads four helper modules from the bridge repository at a pinned commit and checks their SHA-256 before use, so the computer needs Internet access once.
 * Models: `--model 437` (this tag) and `--model 970`. Without `--apply` it only backs up and plans.
 * Run `python3 tools/nebular_debug_custom.py --help` for all options.
+
+## `check_waveform.py`
+
+Checks the panel data block of a tag in a full 512 KiB flash backup (CRC16 of the block at `0x78000`). Run it on the backup before flashing: `python3 tools/check_waveform.py nebular-debug-*/before-1.bin`. It prints only OK / BAD, never the block. See `docs/USER_GUIDE.md` section 1 and section 8. Covered by the licence of this repository.

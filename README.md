@@ -4,7 +4,7 @@ Repo path: `steanlab/badge437` (public).
 
 Own firmware and a web control page for the **Hanshow Nebular Pro 437Q-N**: a 4.37" electronic shelf label with a 480 x 176 pixel black / white / red / yellow e-paper panel, a Telink TLSR8258 Bluetooth LE module, an RGB LED and an NFC chip. The firmware replaces the original one and turns the tag into a small picture frame / badge that you control from a phone or a PC.
 
-**Release 0.9e (12 November 2026)**: [`firmware/n437_0.9e.bin`](firmware/n437_0.9e.bin) (0.9d and 0.9a stay in the same folder), notes in [`firmware/RELEASE_NOTES.md`](firmware/RELEASE_NOTES.md). Control page: <https://steanlab.github.io/badge437/> (Chrome or Edge, Android or desktop; Web Bluetooth).
+**Release 0.9f (12 November 2026)**: [`firmware/n437_0.9f.bin`](firmware/n437_0.9f.bin) (0.9e, 0.9d and 0.9a stay in the same folder), notes in [`firmware/RELEASE_NOTES.md`](firmware/RELEASE_NOTES.md). Control page: <https://steanlab.github.io/badge437/> (Chrome or Edge, Android or desktop; Web Bluetooth).
 
 Unofficial: not affiliated with Hanshow, Telink, OpenDisplay or OpenEPaperLink. **Flashing replaces the original firmware of your tag and needs a programmer wire; use it at your own risk, no warranty.** Tested so far on **one** tag.
 
@@ -43,11 +43,11 @@ So: if you do not have (or do not want to build) a programmer, this project is n
 | File | For whom |
 |---|---|
 | [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md), [`docs/USER_GUIDE.ru.md`](docs/USER_GUIDE.ru.md) | users: flash, first start, page, modes, LED, NFC, slideshow, OTA, problems |
-| [`firmware/RELEASE_NOTES.md`](firmware/RELEASE_NOTES.md) | what is in 0.9e, what was tested on a tag, what is not done, history |
+| [`firmware/RELEASE_NOTES.md`](firmware/RELEASE_NOTES.md) | what is in 0.9f, what was tested on a tag, what is not done, history |
 | [`docs/HARDWARE.md`](docs/HARDWARE.md) | for those who want to write their own firmware: the tag (MCU, pins, flash map and what must never be written, panel basics, NFC, LED, power, Telink pitfalls); **not** the panel drive recipe |
 | [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | Bluetooth commands of the firmware, OpenDisplay subset, basic slot and image formats |
 
-## Not done / limits (0.9e)
+## Not done / limits (0.9f)
 
 * **No authentication.** In standalone mode anyone near the tag can connect during an open window (after power-up or a tap) and change pictures, settings and even upload firmware; the window is short and the physical tap or power cycle is the only protection. OpenDisplay encryption is not implemented.
 * The battery voltage is not measured yet and the energy consumption was not measured; no battery-life figure is given. The tag's cell is probably a non-rechargeable lithium cell (see the hardware notes): never charge it.
