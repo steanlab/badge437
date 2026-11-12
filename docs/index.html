@@ -1,0 +1,1116 @@
+<!doctype html>
+<!-- badge437 control page. Copyright 2026 steanlab. PolyForm Noncommercial License 1.0.0 (https://polyformproject.org/licenses/noncommercial/1.0.0/). Required Notice: Copyright 2026 steanlab (https://github.com/steanlab/badge437). Personal and non-commercial use only; see LICENSE.md in the repository. -->
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>badge437 — консоль</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+:root{--bg:#f4f5f7;--fg:#1c1f24;--card:#fff;--bd:#d5d9e0;--acc:#2563eb;--mut:#6b7280;--log:#0f172a;--logfg:#d1fae5}
+@media (prefers-color-scheme:dark){:root{--bg:#14161a;--fg:#e6e8eb;--card:#1e2126;--bd:#343a43;--acc:#60a5fa;--mut:#9aa3af;--log:#0b0d10;--logfg:#a7f3d0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,sans-serif;padding:12px 16px 40px}
+main{max-width:760px;margin:0 auto}
+h1{font-size:18px;margin:6px 0 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin:0 0 8px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px}
+button{font:inherit;padding:7px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--fg);cursor:pointer}
+button:hover:not(:disabled){border-color:var(--acc)}
+button:disabled{opacity:.45;cursor:default}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button.sm{padding:3px 8px;font-size:13px}
+button.danger{border-color:#d33;color:#d33}
+input,select{font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input[type=text]{width:14em}
+input[type=range]{padding:0;width:9em}
+progress{width:100%;height:10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td,th{padding:4px 6px;border-bottom:1px solid var(--bd);text-align:left}
+th{color:var(--mut);font-weight:600;font-size:12px}
+#prev{width:176px;height:480px;border:1px solid var(--bd);border-radius:4px;image-rendering:pixelated;background:#fff}
+#st,small,label{color:var(--mut)}
+label{font-size:13px}
+#log{background:var(--log);color:var(--logfg);font:13px/1.35 ui-monospace,Menlo,Consolas,monospace;height:340px;overflow:auto;padding:8px;border-radius:8px;white-space:pre-wrap;word-break:break-all}
+#log .tx{color:#93c5fd}#log .sys{color:#fbbf24}
+details.card>summary{cursor:pointer;font-weight:600;font-size:14px;list-style-position:inside}
+details.card[open]>summary{margin-bottom:8px}
+.warn{margin-top:8px;padding:8px 10px;border-radius:8px;background:#fde8e8;color:#8a1f1f;border:1px solid #d33;font-size:13px}
+@media (prefers-color-scheme:dark){.warn{background:#3b1b1b;color:#fecaca}}
+.warn[hidden]{display:none}
+.cols{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+.cols>div{flex:1;min-width:230px}
+</style>
+</head>
+<body>
+<main>
+<h1>badge437 — консоль метки Hanshow Nebular Pro 437Q-N</h1>
+
+<div class="card">
+  <div class="row">
+    <button id="bConn" class="pri">Подключиться</button>
+    <button id="bDisc" disabled>Отключиться</button>
+    <button id="bLang" class="sm" title="Language / Язык">EN</button>
+    <button id="bInstall" class="sm" hidden>Установить как приложение</button>
+    <button id="bWiz" class="sm" hidden>Мастер первого запуска</button>
+    <label><input type="checkbox" id="showAll"> показать все устройства</label>
+    <span id="st">не подключено</span>
+  </div>
+  <div class="row"><small>Нужен Chrome/Edge с Web Bluetooth. Имя метки: OD- и четыре символа MAC (например OD-A1B2).</small></div>
+  <div id="fwWarn" class="warn" hidden></div>
+</div>
+
+<details class="card" id="wizCard" open>
+  <summary>Первый запуск: пошаговая проверка</summary>
+  <ol id="wizList" style="padding-left:22px;margin:8px 0"></ol>
+  <div class="row"><small id="wizNote"></small></div>
+  <div class="row"><button class="sm" id="wizHide">Скрыть мастер</button></div>
+</details>
+
+<div class="card">
+  <h2>Слайды в памяти метки</h2>
+  <div class="row"><button class="nc" id="bList" disabled>Обновить список</button><span id="free"><small>—</small></span></div>
+  <div class="row"><small id="drawInfo"></small></div>
+  <table><thead><tr><th>№</th><th>формат</th><th>размер</th><th>секторов</th><th></th></tr></thead><tbody id="slotRows"><tr><td colspan="5"><small>список ещё не получен</small></td></tr></tbody></table>
+  <div class="row" style="margin-top:8px"><button class="nc danger" id="bEraseAll" disabled>Стереть все слоты</button></div>
+</div>
+
+<div class="card" id="ssCard">
+  <h2>Слайд-шоу</h2>
+  <div class="row"><label><input type="checkbox" id="ssOn" class="nc"> листать слайды сами</label>
+    <label>каждые</label><input type="number" id="ssEvery" class="nc" min="1" max="1080" value="60" style="width:4.5em">
+    <select id="ssUnit" class="nc"><option value="1">минут</option><option value="60">часов</option></select>
+    <label>порядок</label><select id="ssOrder" class="nc"><option value="0">по кругу</option><option value="1">случайный</option></select></div>
+  <div class="row"><label>слайды в показе</label><span id="ssMask"></span></div>
+  <div class="row"><label>чистка панели каждые</label><input type="number" id="ssClean" class="nc" min="0" max="250" value="0" style="width:4.5em">
+    <label>слайдов (0 — выкл), способ</label><select id="ssCleanMode" class="nc"><option value="1">белый</option><option value="2">чёрный, затем белый</option></select></div>
+  <div class="row"><button class="nc" id="bSsSet" disabled>Применить</button><button class="nc" id="bSsGet" disabled>Прочитать</button><button class="nc" id="bSsNext" disabled>Следующий слайд сейчас</button></div>
+  <div class="row"><small id="ssInfo">Работает в автономном режиме; слайд меняется и касанием телефона. Если выпал тот же слайд, что уже на панели, он не перерисовывается; порядок «случайный» и пропуск перерисовки есть в прошивке 0.9e и новее.</small></div>
+</div>
+
+<div class="card">
+  <h2>Новая картинка</h2>
+  <div class="cols">
+    <div>
+      <div class="row"><input type="file" id="file" accept="image/*"></div>
+      <div class="row"><label>вписать</label>
+        <select id="fit"><option value="cover">заполнить (обрезать)</option><option value="contain">целиком (поля белые)</option><option value="stretch">растянуть</option></select></div>
+      <div class="row"><label>поворот</label>
+        <select id="rot"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></div>
+      <div class="row"><label>растр</label>
+        <select id="dith"><option value="fs">Флойд–Стейнберг (фото)</option><option value="atk">Аткинсон (гравюры, текст)</option><option value="bay">упорядоченный (сжимается лучше)</option><option value="none">без растра</option></select></div>
+      <div class="row"><label>цвета</label>
+        <select id="pal"><option value="4">4 цвета (белый, чёрный, красный, жёлтый)</option><option value="7">8 цветов (прошивка 0.9d)</option></select></div>
+      <div class="row"><label>яркость</label><input type="range" id="bri" min="-60" max="60" value="0"></div>
+      <div class="row"><label>контраст</label><input type="range" id="con" min="-60" max="60" value="0"></div>
+      <div class="row"><label>в слот</label><select id="slot"></select>
+        <button class="pri nc" id="bUp" disabled>Загрузить</button><button class="nc" id="bUpStop" disabled>Прервать</button></div>
+      <div class="row"><label>запись</label>
+        <select id="wmode"><option value="r">с подтверждением (надёжно)</option><option value="nr">без подтверждения (быстро)</option></select></div>
+      <progress id="prog" max="100" value="0"></progress>
+      <div class="row"><small id="upinfo">Выберите картинку: она приводится к 176×480 и четырём цветам (белый, чёрный, красный, жёлтый). Загружается самый короткий из трёх видов: без сжатия, LZ, LZ с вычитанием строк.</small></div>
+    </div>
+    <div><canvas id="prev" width="176" height="480"></canvas></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Панель</h2>
+  <div class="row"><label>ориентация</label>
+    <select id="oMode"><option value="0">как есть</option><option value="2">зеркально по горизонтали</option><option value="1">строки в обратном порядке (диагностика)</option><option value="3">оба</option></select>
+    <label>цвета (lut, hex)</label><input type="text" id="oLut" style="width:4em" value="27">
+    <label>слот для потока OpenDisplay</label><input type="number" id="oSlot" min="0" max="23" value="23" style="width:4.5em">
+    <button class="nc" id="bOdSet" disabled>Применить</button><button class="nc" id="bOdGet" disabled>Прочитать</button></div>
+  <div class="row"><small id="odInfo">Текущие значения читаются с метки. Ориентация и цвета применяются при рисовании, повторно загружать картинку не нужно.</small></div>
+</div>
+
+<div class="card" id="modeCard">
+  <h2>Режим работы</h2>
+  <div class="row"><label>режим</label>
+    <select id="mMode"><option value="0">Автономный (по умолчанию, экономит батарею)</option><option value="1">OpenDisplay (всегда на связи)</option></select></div>
+  <div class="row"><label><input type="checkbox" id="mSplash" class="nc" checked> заставка при включении и перезагрузке (чёрный фон, BADGE437 PROJECT, версия; прошивка 0.9e)</label></div>
+  <div class="row"><label>связь после касания, с</label><input type="number" id="mTap" min="10" max="250" value="60" style="width:4.5em">
+    <label>после включения питания, с</label><input type="number" id="mBoot" min="10" max="250" value="120" style="width:4.5em">
+    <button class="nc" id="bModeSet" disabled>Применить</button><button class="nc" id="bModeGet" disabled>Прочитать</button></div>
+  <div class="row"><small id="modeInfo">Автономный: метка спит и включает Bluetooth только на время после касания телефоном и после включения питания; слайдшоу идёт само. OpenDisplay: Bluetooth включён всегда (Home Assistant, веб-инструмент OpenDisplay), расход выше. При смене режима метка перезагружается; вернуться можно приложив телефон к метке или переподключив питание.</small></div>
+</div>
+
+<details class="card" id="otaCard">
+  <summary>Обновление прошивки по Bluetooth (OTA)</summary>
+  <div class="row"><small id="otaNow">Текущая прошивка метки появится после подключения.</small></div>
+  <div class="row"><small id="otaTr"></small></div>
+  <div class="row"><label>файл прошивки (.bin)</label><input type="file" id="fwFile" accept=".bin" class="nc" disabled></div>
+  <div class="row"><small id="otaFile">Файл не выбран. Нужен образ, который собирает build.sh (имя вида n437_0.8.bin, до 124 КБ).</small></div>
+  <div class="row"><button class="nc" id="bFwUp" disabled>Загрузить в метку</button><button class="nc" id="bFwGo" disabled>Переключиться на новую</button></div>
+  <progress id="otaProg" max="100" value="0"></progress>
+  <div class="row"><small>Образ пишется во второй образ флеша; рабочая прошивка при этом не меняется. Метка сама проверяет заголовок, CRC и что это прошивка для 437. Переключение сохраняет копию прежней прошивки, ставит флаг загрузки и перезапускает метку. Не выключайте питание во время загрузки. Новая прошивка проверяется: если она трижды подряд не подтвердила себя за 5 с после запуска, метка сама возвращает прежнюю (около минуты). Если и это не помогло, нужен программатор (Pico).</small></div>
+</details>
+
+<details class="card">
+  <summary>Для разработчиков</summary>
+  <div class="row"><button class="nc" data-c="02">Статус (02)</button><button class="nc" data-c="20">NFC: поиск (20)</button><button class="nc" data-c="26">NFC: регистры (26)</button><button class="nc" data-c="27">NFC: 60 с слушать (27)</button><button class="nc" data-c="2c 00 00 80">NFC: память (2C)</button><button class="nc" data-c="2d">NFC: обновить запись (2D)</button><button class="nc" data-c="46 00">Тест в слот 0 (46 00)</button></div>
+  <div class="row"><label>команда (hex, каждый байт — две цифры)</label><input type="text" id="raw" placeholder="30 00 05" class="nc" disabled><button class="nc" id="bRaw" disabled>Отправить</button></div>
+  <div class="row"><small>Слоты: 40 список, 41 ss стереть (FF — все), 45 ss показать, 46 ss тест, 47 ss проверить, 4D mode slot [lut] настройки. Полный список — firmware/n437/README.md.</small></div>
+</details>
+
+<div class="card">
+  <h2>Журнал</h2>
+  <div id="log"></div>
+  <div class="row" style="margin-top:6px"><button id="bClear">Очистить</button><button id="bCopy">Копировать</button><button id="bSave">Сохранить в файл</button></div>
+</div>
+</main>
+<script>
+/* ================= LZ codec (the firmware decodes this) ================= */
+/* LZ4 block encoder / decoder for the 437Q-N slot formats (offsets <= 2048), and the line XOR filter. Plain functions, no dependencies. */
+const LZ_WIN = 2048;
+
+function lzEncode(src, depth){
+  depth = depth || 48;
+  const n = src.length, HB = 14;
+  const head = new Int32Array(1 << HB).fill(-1), prev = new Int32Array(n).fill(-1);
+  let out = new Uint8Array(n + (n >> 7) + 64), o = 0;
+  const h4 = i => (Math.imul((src[i] | (src[i+1] << 8) | (src[i+2] << 16) | (src[i+3] << 24)), 2654435761) >>> (32 - HB));
+  const insert = i => { if (i + 4 <= n){ const h = h4(i); prev[i] = head[h]; head[h] = i; } };
+  function best(i){                                   // longest match at i within the window: [len, offset]
+    let bl = 0, bo = 0;
+    if (i + 4 > n) return [0, 0];
+    let p = head[h4(i)], d = depth;
+    const lim = n - i;
+    while (p >= 0 && d-- > 0){
+      const off = i - p;
+      if (off > LZ_WIN) break;
+      if (src[p] === src[i] && src[p + bl] === src[i + bl]){
+        let l = 0;
+        while (l < lim && src[p + l] === src[i + l]) l++;
+        if (l > bl){ bl = l; bo = off; if (l === lim) break; }
+      }
+      p = prev[p];
+    }
+    return bl >= 4 ? [bl, bo] : [0, 0];
+  }
+  function put(b){ if (o >= out.length){ const t = new Uint8Array(out.length * 2); t.set(out); out = t; } out[o++] = b; }
+  function ext(v){ while (v >= 255){ put(255); v -= 255; } put(v); }
+  function seq(ls, le, ml, off){                      // literals src[ls..le), then a match of ml bytes at offset off (ml = 0: last sequence)
+    const ll = le - ls;
+    put((Math.min(ll, 15) << 4) | (ml ? Math.min(ml - 4, 15) : 0));
+    if (ll >= 15) ext(ll - 15);
+    for (let k = ls; k < le; k++) put(src[k]);
+    if (ml){ put(off & 255); put(off >> 8); if (ml - 4 >= 15) ext(ml - 4 - 15); }
+  }
+  let i = 0, anchor = 0;
+  while (i < n){
+    let [l, off] = best(i);
+    if (l){
+      if (i + 1 < n){                                 // lazy: a clearly longer match one byte later wins
+        insert(i);
+        const [l2] = best(i + 1);
+        if (l2 > l + 1){ i++; continue; }
+      } else insert(i);
+      seq(anchor, i, l, off);
+      for (let k = 1; k < l; k++) insert(i + k);
+      i += l; anchor = i;
+    } else { insert(i); i++; }
+  }
+  if (anchor < n) seq(anchor, n, 0, 0);               // no empty trailing token: the decoder stops when the frame is complete
+  return out.slice(0, o);
+}
+
+function lzDecode(st, outLen){
+  const out = new Uint8Array(outLen);
+  let i = 0, o = 0;
+  while (i < st.length){
+    const t = st[i++];
+    let ll = t >> 4, ml = t & 15;
+    if (ll === 15){ let x; do { x = st[i++]; ll += x; } while (x === 255); }
+    for (let k = 0; k < ll; k++){ if (o >= outLen) throw new Error("overflow"); out[o++] = st[i++]; }
+    if (i >= st.length) break;
+    const off = st[i] | (st[i + 1] << 8); i += 2;
+    if (off === 0 || off > LZ_WIN || off > o) throw new Error("bad offset");
+    if (ml === 15){ let x; do { x = st[i++]; ml += x; } while (x === 255); }
+    ml += 4;
+    for (let k = 0; k < ml; k++){ if (o >= outLen) throw new Error("overflow"); out[o] = out[o - off]; o++; }
+  }
+  if (o !== outLen) throw new Error("short " + o);
+  return out;
+}
+
+function xorLines(f, lb){ const o = new Uint8Array(f.length); for (let i = 0; i < f.length; i++) o[i] = f[i] ^ (i >= lb ? f[i - lb] : 0); return o; }
+function unxorLines(f, lb){ const o = new Uint8Array(f.length); for (let i = 0; i < f.length; i++) o[i] = f[i] ^ (i >= lb ? o[i - lb] : 0); return o; }
+
+/* the smallest of: raw (0), LZ (1), LZ of the line-XORed frame (2); returns {fmt, data} and verifies the round trip */
+function packFrame(frame){
+  let best = { fmt: 0, data: frame };
+  for (const fmt of [1, 2]){
+    const s = lzEncode(fmt === 2 ? xorLines(frame, 44) : frame);
+    if (s.length < best.data.length){
+      const back = lzDecode(s, frame.length), ok = (fmt === 2 ? unxorLines(back, 44) : back).every((v, k) => v === frame[k]);
+      if (ok) best = { fmt, data: s };
+    }
+  }
+  return best;
+}
+/* 7-colour pictures (firmware 0.9d): two planes of panel codes, plane 0 for pass 0, plane 1 for pass 1, 21 120 bytes each; the stream is 960 lines.
+   Formats: 3 raw (42 240 bytes), 4 LZ, 5 LZ with the line XOR applied to each plane separately (the chain restarts at line 480). Returns the smallest, round trip verified. */
+function packPlanes(p0, p1){
+  const n = p0.length, cat = (a, b) => { const o = new Uint8Array(a.length + b.length); o.set(a); o.set(b, a.length); return o; };
+  const raw = cat(p0, p1);
+  let best = { fmt: 3, data: raw };
+  for (const fmt of [4, 5]){
+    const src = fmt === 5 ? cat(xorLines(p0, 44), xorLines(p1, 44)) : raw;
+    const s = lzEncode(src);
+    if (s.length < best.data.length){
+      const back = lzDecode(s, 2 * n);
+      const un = fmt === 5 ? cat(unxorLines(back.subarray(0, n), 44), unxorLines(back.subarray(n), 44)) : back;
+      if (un.every((v, k) => v === raw[k])) best = { fmt, data: s };
+    }
+  }
+  return best;
+}
+
+/* ================= picture -> 4 colours -> frame (pure functions, tested in Node) ================= */
+const W = 176, H = 480, LB = 44, FRAME_LEN = 21120;
+const PAL = [[255,255,255],[0,0,0],[200,30,30],[235,200,20]];        // palette index: white, black, red, yellow (nominal colours; the panel is not calibrated yet)
+const OD = [1, 0, 3, 2];                                              // palette index -> OpenDisplay code (black 0, white 1, yellow 2, red 3)
+const BAYER8 = [0,32,8,40,2,34,10,42, 48,16,56,24,50,18,58,26, 12,44,4,36,14,46,6,38, 60,28,52,20,62,30,54,22,
+                3,35,11,43,1,33,9,41, 51,19,59,27,49,17,57,25, 15,47,7,39,13,45,5,37, 63,31,55,23,61,29,53,21];
+
+function crc32(d){
+  let t = crc32.t;
+  if (!t){ t = crc32.t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } }
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < d.length; i++) c = t[(c ^ d[i]) & 255] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+/* RGBA (W*H*4) -> float RGB (W*H*3) with brightness / contrast (-60..60 each) applied */
+function prepare(rgba, bri, con){
+  const f = new Float32Array(W * H * 3);
+  const c = con * 2.55, k = (259 * (c + 255)) / (255 * (259 - c)), b = bri * 2.55;
+  for (let i = 0, j = 0; i < W * H; i++, j += 3){
+    for (let ch = 0; ch < 3; ch++){
+      const v = rgba[i * 4 + ch], a = rgba[i * 4 + 3] / 255;
+      const m = v * a + 255 * (1 - a);                                // transparent = white
+      f[j + ch] = Math.max(0, Math.min(255, k * (m - 128) + 128 + b));
+    }
+  }
+  return f;
+}
+
+function nearest(r, g, b, pal){
+  const P = pal || PAL;
+  let bi = 0, bd = 1e18;
+  for (let c = 0; c < P.length; c++){
+    const dr = r - P[c][0], dg = g - P[c][1], db = b - P[c][2], d = dr * dr + dg * dg + db * db;
+    if (d < bd){ bd = d; bi = c; }
+  }
+  return bi;
+}
+
+/* f: float RGB from prepare(); mode: fs | atk | bay | none; result: palette index per pixel (row-major, W x H) */
+function quantize(f, mode, pal){
+  const P = pal || PAL, idx = new Uint8Array(W * H);
+  if (mode === "none"){
+    for (let p = 0; p < W * H; p++) idx[p] = nearest(f[p*3], f[p*3+1], f[p*3+2], P);
+    return idx;
+  }
+  if (mode === "bay"){
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){
+      const p = y * W + x, t = (BAYER8[(y & 7) * 8 + (x & 7)] + 0.5) / 64 - 0.5, s = 110 * t;
+      idx[p] = nearest(f[p*3] + s, f[p*3+1] + s, f[p*3+2] + s, P);
+    }
+    return idx;
+  }
+  const w = new Float32Array(f);
+  const fs = mode === "fs";
+  const push = (x, y, er, eg, eb, k) => { if (x < 0 || x >= W || y >= H) return; const q = (y * W + x) * 3; w[q] += er * k; w[q+1] += eg * k; w[q+2] += eb * k; };
+  for (let y = 0; y < H; y++){
+    const ltr = !fs || (y & 1) === 0, dx = ltr ? 1 : -1;
+    for (let kx = 0; kx < W; kx++){
+      const x = ltr ? kx : W - 1 - kx, p = y * W + x;
+      const r = w[p*3], g = w[p*3+1], b = w[p*3+2];
+      const c = nearest(r, g, b, P);
+      idx[p] = c;
+      const cl = v => Math.max(-96, Math.min(96, v));                 // keep the error bounded for colours the panel cannot reach
+      const er = cl(r - P[c][0]), eg = cl(g - P[c][1]), eb = cl(b - P[c][2]);
+      if (fs){
+        push(x + dx, y, er, eg, eb, 7/16); push(x - dx, y + 1, er, eg, eb, 3/16); push(x, y + 1, er, eg, eb, 5/16); push(x + dx, y + 1, er, eg, eb, 1/16);
+      } else {                                                        // Atkinson: only 6/8 of the error is passed on
+        push(x + 1, y, er, eg, eb, 1/8); push(x + 2, y, er, eg, eb, 1/8);
+        push(x - 1, y + 1, er, eg, eb, 1/8); push(x, y + 1, er, eg, eb, 1/8); push(x + 1, y + 1, er, eg, eb, 1/8); push(x, y + 2, er, eg, eb, 1/8);
+      }
+    }
+  }
+  return idx;
+}
+
+/* palette indices -> the slot frame: 480 lines of 44 bytes, 4 pixels per byte, first pixel in bits 7..6, OpenDisplay codes */
+function toFrame(idx){
+  const out = new Uint8Array(FRAME_LEN);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) out[y * LB + (x >> 2)] |= OD[idx[y * W + x]] << (6 - 2 * (x & 3));
+  return out;
+}
+/* 8 colours (firmware 0.9d, two passes). Index: white, black, dark red, yellow, orange, grey, dark grey, ochre (yellow + pass-1 code 2, measured Y 0.55 of white); the colours used for the decision and the preview are ideal screen colours,
+   the panel shows its own (black and the greys are lighter, see docs/COLOR_CALIBRATION.md). Panel codes per pass: pass 0 (long record) white 1, yellow 2, orange 0, dark red 3,
+   black and the greys 1 (white); pass 1 (short record) adds black 0, grey 2, dark grey 3, nothing 1. */
+const PAL7 = [[255,255,255],[0,0,0],[200,30,30],[235,200,20],[235,120,20],[170,170,170],[85,85,85],[200,165,40]];
+
+/* 7-colour decision (page "пункт 1"): the panel greys are lighter than ideal ones (measured, relative to panel white: black 0.21, dark grey 0.36, grey 0.65, white 1.0),
+   so the achromatic part of the picture is compressed into that range and the greys are chosen at their measured sRGB values. Saturated pixels (red, yellow, orange) are left alone,
+   the compression is weighted by (1 - saturation). PAL7 stays the preview palette, PAL7D is only used for the decision and the diffused error. */
+const BLK7 = 0.21;
+const PAL7D = [[255,255,255],[128,128,128],[200,30,30],[235,200,20],[235,120,20],[212,212,212],[163,163,163],[200,165,40]];
+const s2l = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+const l2s = v => 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055);
+function tone7(f){
+  const o = new Float32Array(f.length);
+  for (let j = 0; j < f.length; j += 3){
+    const r = f[j], g = f[j+1], b = f[j+2], mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx > 0 ? (mx - mn) / mx : 0, w = Math.max(0, 1 - 2 * sat);
+    const lr = s2l(r), lg = s2l(g), lb = s2l(b), L = 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+    const L2 = L + w * (BLK7 + (1 - BLK7) * L - L);
+    const k = L > 1e-4 ? L2 / L : 0, add = L > 1e-4 ? 0 : w * BLK7;
+    o[j] = Math.min(255, l2s(Math.min(1, lr * k + add))); o[j+1] = Math.min(255, l2s(Math.min(1, lg * k + add))); o[j+2] = Math.min(255, l2s(Math.min(1, lb * k + add)));
+  }
+  return o;
+}
+const P0_7 = [1, 1, 3, 2, 0, 1, 1, 2];
+const P1_7 = [1, 0, 1, 1, 1, 2, 3, 2];
+/* palette indices (PAL7) -> two planes of panel codes, 480 lines of 44 bytes each, 4 pixels per byte, first pixel in bits 7..6 */
+function toPlanes(idx){
+  const a = new Uint8Array(FRAME_LEN), b = new Uint8Array(FRAME_LEN);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){
+    const c = idx[y * W + x], sh = 6 - 2 * (x & 3), o = y * LB + (x >> 2);
+    a[o] |= P0_7[c] << sh; b[o] |= P1_7[c] << sh;
+  }
+  return [a, b];
+}
+const sectorsFor = len => Math.ceil((256 + len) / 4096);
+
+/* ================= languages: Russian is the source text, English is looked up here ================= */
+const EN = {
+  "badge437 — консоль": "badge437 console",
+  "badge437 — консоль метки Hanshow Nebular Pro 437Q-N": "badge437: console for the Hanshow Nebular Pro 437Q-N tag",
+  "Подключиться": "Connect",
+  "Отключиться": "Disconnect",
+  "показать все устройства": "show all devices",
+  "не подключено": "not connected",
+  "подключение…": "connecting…",
+  "подключено: ": "connected: ",
+  "Нужен Chrome/Edge с Web Bluetooth. Имя метки: OD- и четыре символа MAC (например OD-A1B2).": "Needs Chrome/Edge with Web Bluetooth. The tag name is OD- plus four characters of the MAC (for example OD-A1B2).",
+  "Слайды в памяти метки": "Slides in the tag memory",
+  "Обновить список": "Refresh the list",
+  "№": "No.",
+  "формат": "format",
+  "размер": "size",
+  "секторов": "sectors",
+  "список ещё не получен": "the list has not been received yet",
+  "слотов нет": "no slots",
+  "Стереть все слоты": "Erase all slots",
+  "Стереть все слоты?": "Erase all slots?",
+  "Новая картинка": "New picture",
+  "вписать": "fit",
+  "заполнить (обрезать)": "fill (crop)",
+  "целиком (поля белые)": "whole picture (white margins)",
+  "растянуть": "stretch",
+  "поворот": "rotation",
+  "растр": "dithering",
+  "Флойд–Стейнберг (фото)": "Floyd–Steinberg (photos)",
+  "Аткинсон (гравюры, текст)": "Atkinson (engravings, text)",
+  "упорядоченный (сжимается лучше)": "ordered (compresses better)",
+  "без растра": "none",
+  "яркость": "brightness",
+  "контраст": "contrast",
+  "в слот": "to slot",
+  "Загрузить": "Upload",
+  "Прервать": "Abort",
+  "запись": "write mode",
+  "с подтверждением (надёжно)": "with acknowledgement (reliable)",
+  "без подтверждения (быстро)": "without acknowledgement (fast)",
+  "Выберите картинку: она приводится к 176×480 и четырём цветам (белый, чёрный, красный, жёлтый). Загружается самый короткий из трёх видов: без сжатия, LZ, LZ с вычитанием строк.": "Choose a picture: it is fitted to 176×480 and four colours (white, black, red, yellow). The shortest of three forms is uploaded: uncompressed, LZ, LZ with line subtraction.",
+  "Панель": "Panel",
+  "ориентация": "orientation",
+  "как есть": "as is",
+  "зеркально по горизонтали": "mirrored horizontally",
+  "строки в обратном порядке (диагностика)": "lines in reverse order (diagnostics)",
+  "оба": "both",
+  "цвета (lut, hex)": "colours (lut, hex)",
+  "слот для потока OpenDisplay": "slot for the OpenDisplay stream",
+  "Применить": "Apply",
+  "Прочитать": "Read",
+  "Текущие значения читаются с метки. Ориентация и цвета применяются при рисовании, повторно загружать картинку не нужно.": "The current values are read from the tag. Orientation and colours are applied when drawing, the picture does not have to be uploaded again.",
+  "Обновление прошивки по Bluetooth (OTA)": "Firmware update over Bluetooth (OTA)",
+  "Текущая прошивка метки появится после подключения.": "The tag's firmware will show here after connecting.",
+  "файл прошивки (.bin)": "firmware file (.bin)",
+  "Файл не выбран. Нужен образ, который собирает build.sh (имя вида n437_0.8.bin, до 124 КБ).": "No file chosen. It must be the image that build.sh makes (a name like n437_0.8.bin, up to 124 KB).",
+  "Загрузить в метку": "Upload to the tag",
+  "Переключиться на новую": "Switch to the new one",
+  "Образ пишется во второй образ флеша; рабочая прошивка при этом не меняется. Метка сама проверяет заголовок, CRC и что это прошивка для 437. Переключение сохраняет копию прежней прошивки, ставит флаг загрузки и перезапускает метку. Не выключайте питание во время загрузки. Новая прошивка проверяется: если она трижды подряд не подтвердила себя за 5 с после запуска, метка сама возвращает прежнюю (около минуты). Если и это не помогло, нужен программатор (Pico).": "The image is written into the second firmware image area of the flash; the running firmware is not touched. The tag checks the header, the CRC and that it is a firmware for the 437. Switching stores a copy of the previous firmware, sets the boot flag and restarts the tag. Do not cut the power during the upload. The new firmware is on trial: if it fails to confirm itself within 5 s of the start three times in a row, the tag brings the previous one back by itself (about a minute). If that does not help either, the programmer (Pico) is needed.",
+  "метка переключилась на новую прошивку и перезапускается: подключитесь снова (окно после включения питания)": "the tag switched to the new firmware and restarts: connect again (the window after power-up)",
+  "Новая прошивка на проверке: она подтверждает себя через 5 с после запуска; до этого загрузка новой невозможна.": "The new firmware is on trial: it confirms itself 5 s after the start; no new upload is possible until then.",
+  "Последнее обновление откатилось: новая прошивка не запустилась ({0} запуска без подтверждения), метка вернула прежнюю.": "The last update was rolled back: the new firmware did not start ({0} starts without confirmation), the tag brought the previous one back.",
+  "Откат не удался: нужен программатор (Pico).": "The rollback failed: the programmer (Pico) is needed.",
+  "Сейчас в метке: {0}, образ {1}.": "In the tag now: {0}, image {1}.",
+  "размер вне 16..124 КБ": "size outside 16..124 KB",
+  "нет заголовка KNLT: это не образ Telink": "no KNLT header: not a Telink image",
+  "длина в заголовке не совпадает с размером файла": "the length in the header does not match the file size",
+  "в образе нет строки «N437 fw 437-…»: это не прошивка для этой метки": "the image has no \"N437 fw 437-...\" text: not a firmware for this tag",
+  "Файл: {0}, {1} байт, CRC-32 {2}.": "File: {0}, {1} bytes, CRC-32 {2}.",
+  "Файл не подходит: ": "The file does not fit: ",
+  "Загружено и проверено за {0} с: {1}. Можно переключаться.": "Uploaded and verified in {0} s: {1}. You can switch now.",
+  "Переключиться на прошивку {0}? Метка перезапустится. Если новая прошивка не запустится, метка сама вернёт прежнюю после трёх неудачных запусков (около минуты); если и откат не сработает, нужен программатор.": "Switch to firmware {0}? The tag restarts. If the new firmware does not start, the tag brings the previous one back by itself after three failed starts (about a minute); if the rollback fails too, the programmer is needed.",
+  "Слайд-шоу": "Slideshow",
+  "листать слайды сами": "change slides by itself",
+  "каждые": "every",
+  "минут": "minutes",
+  "часов": "hours",
+  "порядок": "order",
+  "по кругу": "in turn",
+  "случайный": "random",
+  "слайды в показе": "slides in the show",
+  "чистка панели каждые": "clean the panel every",
+  "слайдов (0 — выкл), способ": "slides (0 = off), method",
+  "белый": "white",
+  "чёрный, затем белый": "black, then white",
+  "Следующий слайд сейчас": "Next slide now",
+  "Работает в автономном режиме; слайд меняется и касанием телефона. Если выпал тот же слайд, что уже на панели, он не перерисовывается; порядок «случайный» и пропуск перерисовки есть в прошивке 0.9e и новее.": "Works in the standalone mode; a slide also changes when you tap the tag with a phone. If the same slide as the one on the panel comes up, it is not redrawn; the random order and skipping the redraw are in firmware 0.9e and later.",
+  "Отметьте хотя бы один слайд.": "Tick at least one slide.",
+  "заставка при включении и перезагрузке (чёрный фон, BADGE437 PROJECT, версия; прошивка 0.9e)": "splash screen after power-up and restart (black background, BADGE437 PROJECT, the version; firmware 0.9e)",
+  "Метка рисует слайд {0}: прошло {1} с из примерно 30 (два прохода, панель мигает).": "The tag is drawing slide {0}: {1} s of about 30 (two passes, the panel flashes).",
+  "Рисование не удалось.": "Drawing failed.",
+  "Нарисовано.": "Drawn.",
+  "Интервал меньше 5 минут: панель и батарея будут расходоваться быстро. Продолжить?": "An interval under 5 minutes wears the panel and the battery quickly. Continue?",
+  "Первый запуск: пошаговая проверка": "First start: step-by-step check",
+  "Скрыть мастер": "Hide the wizard",
+  "Мастер первого запуска": "First-start wizard",
+  "Подключитесь к метке (кнопка «Подключиться»; метка должна быть в окне связи: после включения питания или касания телефоном).": "Connect to the tag (the Connect button; the tag must be in its link window: after power-up or a tap with the phone).",
+  "Проверка прошивки (после подключения).": "Firmware check (after connecting).",
+  "Читаю версию прошивки…": "Reading the firmware version…",
+  "Блок формы сигнала в метке повреждён (контрольная сумма не сходится): метка не сможет рисовать. Картинки загрузить можно, показать нельзя. Нужен ремонт программатором, см. руководство, раздел 8.": "The waveform block in the tag is damaged (checksum mismatch): the tag cannot draw. You can upload pictures but not show them. It needs a repair with the programmer, see the user guide, section 8.",
+  "Прошивка {0}: актуальная.": "Firmware {0}: up to date.",
+  "Прошивка {0}: старше 0.8, обновление по Bluetooth в ней невозможно, перепрошейте программатором (файл firmware/n437_0.9f.bin).": "Firmware {0}: older than 0.8, it cannot be updated over Bluetooth; reflash it with the programmer (file firmware/n437_0.9f.bin).",
+  "Прошивка {0}: есть новее (0.9f). Скачайте firmware/n437_0.9f.bin из репозитория и загрузите в карточке «Обновление прошивки (OTA)».": "Firmware {0}: a newer one exists (0.9f). Download firmware/n437_0.9f.bin from the repository and upload it in the card \"Firmware update over Bluetooth (OTA)\".",
+  "Открыть карточку OTA": "Open the OTA card",
+  "Проверка ориентации (после подключения).": "Orientation check (after connecting).",
+  "Читаю ориентацию…": "Reading the orientation…",
+  "Ориентация: зеркально по горизонтали (как нужно для этой панели).": "Orientation: mirrored horizontally (as this panel needs).",
+  "Ориентация сейчас не «зеркально по горизонтали»: картинка может выйти зеркальной.": "The orientation is not \"mirrored horizontally\": the picture may come out mirrored.",
+  "Поставить «зеркально»": "Set \"mirrored\"",
+  "В метке слайдов: {0}.": "Slides in the tag: {0}.",
+  "Выберите картинку в карточке «Новая картинка», нажмите «Загрузить в метку».": "Choose a picture in the card \"New picture\" and press \"Upload to the tag\".",
+  "Выбрать картинку": "Choose a picture",
+  "Слайд нарисован.": "A slide has been drawn.",
+  "Нарисуйте слайд на панели (около 28 с, панель мигает).": "Draw a slide on the panel (about 28 s, the panel flashes).",
+  "Показать слайд {0}": "Show slide {0}",
+  "Слайд-шоу включено.": "The slideshow is on.",
+  "Слайд-шоу: нужно хотя бы два слайда; можно пропустить, если слайд один.": "Slideshow: you need at least two slides; skip it if you have one.",
+  "Слайд-шоу: включите в карточке «Слайд-шоу» (интервал, порядок, слайды) и нажмите «Применить».": "Slideshow: switch it on in the card \"Slideshow\" (interval, order, slides) and press \"Apply\".",
+  "Открыть карточку слайд-шоу": "Open the slideshow card",
+  "Готово: метка настроена. Мастер можно скрыть.": "Done: the tag is set up. You can hide the wizard.",
+  "Режим работы": "Operating mode",
+  "режим": "mode",
+  "Автономный (по умолчанию, экономит батарею)": "Standalone (default, saves the battery)",
+  "OpenDisplay (всегда на связи)": "OpenDisplay (always connectable)",
+  "связь после касания, с": "link after a tap, s",
+  "после включения питания, с": "after power-up, s",
+  "Автономный: метка спит и включает Bluetooth только на время после касания телефоном и после включения питания; слайдшоу идёт само. OpenDisplay: Bluetooth включён всегда (Home Assistant, веб-инструмент OpenDisplay), расход выше. При смене режима метка перезагружается; вернуться можно приложив телефон к метке или переподключив питание.": "Standalone: the tag sleeps and turns Bluetooth on only for a while after a tap of the phone and after power-up; the slideshow runs by itself. OpenDisplay: Bluetooth is always on (Home Assistant, the OpenDisplay web tool), the drain is higher. The tag restarts when the mode changes; to get back in, touch the tag with the phone or reconnect the power.",
+  "Включить режим OpenDisplay? Метка перезагрузится и будет всегда доступна по Bluetooth (расход батареи выше).": "Switch to the OpenDisplay mode? The tag restarts and stays connectable all the time (higher battery drain).",
+  "Включить автономный режим? Метка перезагрузится. Дальше Bluetooth включается только после касания телефоном и на время после включения питания; эта страница сможет подключиться в эти окна.": "Switch to the standalone mode? The tag restarts. From then on Bluetooth is on only after a tap of the phone and for a while after power-up; this page can connect in those windows.",
+  "Для разработчиков": "For developers",
+  "Статус (02)": "Status (02)",
+  "NFC: поиск (20)": "NFC: scan (20)",
+  "NFC: регистры (26)": "NFC: registers (26)",
+  "NFC: 60 с слушать (27)": "NFC: listen 60 s (27)",
+  "NFC: память (2C)": "NFC: memory (2C)",
+  "NFC: обновить запись (2D)": "NFC: rewrite the text record (2D)",
+  "Тест в слот 0 (46 00)": "Test picture to slot 0 (46 00)",
+  "команда (hex, каждый байт — две цифры)": "command (hex, two digits per byte)",
+  "Отправить": "Send",
+  "Слоты: 40 список, 41 ss стереть (FF — все), 45 ss показать, 46 ss тест, 47 ss проверить, 4D mode slot [lut] настройки. Полный список — firmware/n437/README.md.": "Slots: 40 list, 41 ss erase (FF = all), 45 ss show, 46 ss test, 47 ss verify, 4D mode slot [lut] settings. The full list is in firmware/n437/README.md.",
+  "Установить как приложение": "Install as an app",
+  "Журнал": "Log",
+  "Очистить": "Clear",
+  "Копировать": "Copy",
+  "Сохранить в файл": "Save to a file",
+  // run time texts
+  "нужно чётное число hex-цифр": "an even number of hex digits is needed",
+  "не больше 20 байт": "at most 20 bytes",
+  "Web Bluetooth недоступен в этом браузере": "Web Bluetooth is not available in this browser",
+  "— связь потеряна —": "— link lost —",
+  "— подключено к ": "— connected to ",
+  "ошибка: ": "error: ",
+  "нет соединения": "not connected",
+  "ошибка отправки: ": "send error: ",
+  "Прошивка метки ({0}) старше 0.5: слоты фиксированные и сжатие не поддерживается. Загрузка будет отключена; обновите прошивку.": "The tag firmware ({0}) is older than 0.5: fixed slots, no compression. Uploading is disabled; update the firmware.",
+  "цвета": "colours",
+  "4 цвета (белый, чёрный, красный, жёлтый)": "4 colours (white, black, red, yellow)",
+  "8 цветов (прошивка 0.9d)": "8 colours (firmware 0.9d)",
+  "8 цветов, без сжатия": "8 colours, uncompressed",
+  "8 цветов, LZ": "8 colours, LZ",
+  "8 цветов, LZ + строки": "8 colours, LZ + lines",
+  "К загрузке: {0}, {1} КБ из {5} КБ ({2} %), займёт {3} из {4} секторов.": "To upload: {0}, {1} KB of {5} KB ({2} %), takes {3} of {4} sectors.",
+  "без сжатия": "uncompressed",
+  "LZ": "LZ",
+  "LZ + строки": "LZ + lines",
+  " КБ": " KB",
+  "показать": "show",
+  "проверить": "verify",
+  "стереть": "erase",
+  "занято слотов: {0} из {1}, свободно секторов: {2} из {3} (наибольший кусок {4})": "slots used: {0} of {1}, free sectors: {2} of {3} (largest run {4})",
+  " (занят, будет заменён)": " (used, will be replaced)",
+  "нет ответа от метки": "no answer from the tag",
+  "Метка готовит место…": "The tag is preparing space…",
+  "загрузка: чанк {0} Б, окно {1}, {2}": "upload: chunk {0} B, window {1}, {2}",
+  "без подтверждения": "without acknowledgement",
+  "с подтверждением": "with acknowledgement",
+  "прервано": "aborted",
+  "неверное подтверждение: ": "wrong acknowledgement: ",
+  "{0} из {1} КБ, {2} КБ/с": "{0} of {1} KB, {2} KB/s",
+  "Загружено за {0} с. {1}. Теперь можно нажать «показать» в списке слотов.": "Uploaded in {0} s. {1}. Now press “show” in the slot list.",
+  "загрузка не удалась: ": "upload failed: ",
+  "Не удалось: ": "Failed: ",
+  "не удалось прочитать картинку": "could not read the picture",
+  "лог скопирован": "log copied",
+  "не удалось скопировать: ": "could not copy: "
+};
+let lang = "ru";
+try{ lang = localStorage.getItem("lang") || ((navigator.language || "").slice(0, 2) === "ru" || (navigator.language || "").slice(0, 2) === "be" ? "ru" : "en"); }catch(e){}
+function T(s, ...a){
+  let r = (lang === "en" && EN[s] !== undefined) ? EN[s] : s;
+  a.forEach((v, i) => { r = r.split("{" + i + "}").join(String(v)); });
+  return r;
+}
+const i18nNodes = [];
+function i18nInit(){
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()){
+    const k = n.data.trim();
+    if (k && EN[k] !== undefined) i18nNodes.push([n, n.data, k]);
+  }
+  const t = document.querySelector("title");
+  if (t) i18nNodes.push([t.firstChild, t.firstChild.data, t.firstChild.data.trim()]);
+}
+function i18nApply(){
+  document.documentElement.lang = lang;
+  for (const [n, orig, k] of i18nNodes) if (n.isConnected) n.data = lang === "en" ? orig.replace(k, EN[k]) : orig;
+}
+
+/* ================= Bluetooth, log, slots ================= */
+const SVC = 0x2446, CHR = 0x2446;
+const $ = id => document.getElementById(id);
+const logEl = $("log");
+let dev = null, chr = null, buf = "", plain = "";
+let otaImg = null, otaStaged = null, curImg = null, curTr = null, curTn = 0;
+let frame = null, packed = null, upAbort = false, upBusy = false, slots = [], slotTmp = [], fwInfo = null, odCfg = null, fwOk = true;
+const upq = []; let upw = null;
+
+function ts(){ const d = new Date(); return d.toTimeString().slice(0, 8) + "." + String(d.getMilliseconds()).padStart(3, "0"); }
+function add(text, cls){
+  const line = ts() + "  " + text;
+  plain += line + "\n";
+  const s = document.createElement("div");
+  if (cls) s.className = cls;
+  s.textContent = line;
+  const stick = logEl.scrollTop + logEl.clientHeight >= logEl.scrollHeight - 30;
+  logEl.appendChild(s);
+  if (stick) logEl.scrollTop = logEl.scrollHeight;
+}
+const connected = () => !!(chr && dev && dev.gatt && dev.gatt.connected);
+let stKey = "не подключено", stExtra = "";
+function setState(on, key, extra){
+  stKey = key; stExtra = extra || "";
+  $("st").textContent = T(stKey) + stExtra;
+  $("bConn").disabled = on;
+  $("bDisc").disabled = !on;
+  document.querySelectorAll(".nc,[data-c]").forEach(b => b.disabled = !on);
+  refreshUp();
+  if (typeof renderOta === "function") renderOta();
+  if (window.__wizOn) renderWiz();
+}
+setState(false, "не подключено");
+
+const hx = a => Array.from(a).map(b => b.toString(16).padStart(2, "0")).join(" ");
+const h2 = n => (n & 255).toString(16).padStart(2, "0");
+const le32 = v => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
+function parseHex(s){
+  const t = s.replace(/[^0-9a-fA-F]/g, "");
+  if (!t.length || t.length % 2) throw new Error(T("нужно чётное число hex-цифр"));
+  const out = [];
+  for (let i = 0; i < t.length; i += 2) out.push(parseInt(t.substr(i, 2), 16));
+  if (out.length > 20) throw new Error(T("не больше 20 байт"));
+  return Uint8Array.from(out);
+}
+
+function onNotify(ev){
+  const v = ev.target.value;
+  const bytes = new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
+  if (!buf.length && bytes.length >= 2 && (bytes[0] === 0x00 || bytes[0] === 0xFF)) return;     // OpenDisplay reply: not used by this page
+  for (const b of bytes){
+    if (b === 10){ if (buf.length){ add(buf); lineHook(buf); } buf = ""; }
+    else if (b === 13) {}
+    else if (b >= 32 && b < 127) buf += String.fromCharCode(b);
+    else buf += "\\x" + b.toString(16).padStart(2, "0");
+  }
+}
+
+async function connect(){
+  if (!navigator.bluetooth){ add(T("Web Bluetooth недоступен в этом браузере"), "sys"); return; }
+  try{
+    const all = $("showAll").checked;
+    dev = await navigator.bluetooth.requestDevice(all ? {acceptAllDevices: true, optionalServices: [SVC]} : {filters: [{namePrefix: "OD"}], optionalServices: [SVC]});
+    dev.addEventListener("gattserverdisconnected", () => {
+      if (buf.length){ add(buf); buf = ""; }
+      add(T("— связь потеряна —"), "sys");
+      setState(false, "не подключено");
+    });
+    setState(false, "подключение…");
+    const srv = await dev.gatt.connect();
+    const svc = await srv.getPrimaryService(SVC);
+    chr = await svc.getCharacteristic(CHR);
+    chr.addEventListener("characteristicvaluechanged", onNotify);
+    await chr.startNotifications();
+    setState(true, "подключено: ", dev.name);
+    add(T("— подключено к ") + dev.name + " —", "sys");
+    fwInfo = null; renderFw();
+    send("02").catch(() => {});
+    setTimeout(() => { if (connected()) send("40").catch(() => {}); }, 500);
+    setTimeout(() => { if (connected()) send("4D").catch(() => {}); }, 1000);
+    setTimeout(() => { if (connected()) send("4B").catch(() => {}); }, 1500);
+    setTimeout(() => { if (!fwInfo){ fwInfo = {ver: "?", old: true}; renderFw(); } }, 4000);
+  }catch(e){
+    add(T("ошибка: ") + e.message, "sys");
+    setState(false, "не подключено");
+  }
+}
+
+async function send(s, strict){
+  if (!chr){ add(T("нет соединения"), "sys"); if (strict) throw new Error(T("нет соединения")); return; }
+  try{
+    const a = typeof s === "string" ? parseHex(s) : s;
+    add("→ " + hx(a), "tx");
+    if (chr.writeValueWithoutResponse) await chr.writeValueWithoutResponse(a); else await chr.writeValue(a);
+  }catch(e){ add(T("ошибка отправки: ") + e.message, "sys"); if (strict) throw e; }
+}
+
+function renderFw(){
+  const w = $("fwWarn");
+  let msg = "";
+  if (fwInfo){
+    const m = /^437-(\d+)\.(\d+)/.exec(fwInfo.ver);
+    if (!m || +m[1] === 0 && +m[2] < 5) msg = T("Прошивка метки ({0}) старше 0.5: слоты фиксированные и сжатие не поддерживается. Загрузка будет отключена; обновите прошивку.", fwInfo.ver);
+  }
+  { const mm = fwInfo && /^437-(\d+)\.(\d+)/.exec(fwInfo.ver); $("modeCard").hidden = !!(mm && +mm[1] === 0 && +mm[2] < 7); }	/* the mode switch exists from 0.7 */
+  const bad = fwInfo && fwInfo.wf === 0 ? T("Блок формы сигнала в метке повреждён (контрольная сумма не сходится): метка не сможет рисовать. Картинки загрузить можно, показать нельзя. Нужен ремонт программатором, см. руководство, раздел 8.") : "";
+  w.textContent = [msg, bad].filter(Boolean).join(" "); w.hidden = !(msg || bad);
+  renderOta();
+  fwOk = !msg;
+  refreshUp();
+}
+function lineHook(t){
+  let m;
+  setTimeout(() => { if (window.__wizOn) renderWiz(); }, 0);
+  if ((m = /^STATUS fw (\S+)(?:.* wf=(\d))?/.exec(t))){ fwInfo = {ver: m[1], wf: m[2] === undefined ? -1 : +m[2]}; renderFw(); }
+  if ((m = /^STATE .* img=(\S)(?: tr=(\d+) tn=(\d+))?/.exec(t))){ curImg = m[1]; curTr = m[2] === undefined ? null : +m[2]; curTn = m[3] === undefined ? 0 : +m[3]; renderOta(); }
+  if (/^n437: done/.test(t) && drawTick) wizDrawn = true;
+  if (/^SS (on|off) every/.test(t)) ssKnown = true;
+  if (/^n437: (done|FAILED)/.test(t) && drawTick) drawEnd(T(/FAILED/.test(t) ? "Рисование не удалось." : "Нарисовано."));
+  if ((m = /^OTA STAGED (\S+) (\d+) bytes/.exec(t))){ otaStaged = m[1]; renderOta(); }
+  if ((m = /^OTA (DONE|HALF-DONE)/.exec(t))){ otaStaged = null; add(T("метка переключилась на новую прошивку и перезапускается: подключитесь снова (окно после включения питания)"), "sys"); renderOta(); }
+  if ((m = /^STATE mode=(\d) radio=(\d) wt=(\d+) wb=(\d+)/.exec(t)) || (m = /^SYS .* mode=(\d) wt=(\d+) wb=(\d+)/.exec(t))){
+    const w = m.length === 5 ? [m[3], m[4]] : [m[2], m[3]];
+    $("mMode").value = m[1]; $("mTap").value = w[0]; $("mBoot").value = w[1];
+  }
+  if ((m = /^SS (on|off) every=(\d+) mask=([0-9A-Fa-f]+) poll=(\d+) clean=(\d+)\/(\d+) last=(-?\d+) el=(\d+)(?: order=(\d))?/.exec(t))){
+    const ev = +m[2];
+    $("ssOn").checked = m[1] === "on";
+    if (ev >= 60 && ev % 60 === 0){ $("ssEvery").value = ev / 60; $("ssUnit").value = "60"; } else { $("ssEvery").value = ev; $("ssUnit").value = "1"; }
+    ssMaskV = parseInt(m[3], 16) & 0xFFFFFF; ssPoll = +m[4];
+    $("ssClean").value = m[5]; $("ssCleanMode").value = m[6] === "2" ? "2" : "1";
+    if (m[9] !== undefined) $("ssOrder").value = m[9];
+    renderSsMask();
+  }
+  if ((m = /^SYS .* sp=(\d)/.exec(t))) $("mSplash").checked = m[1] === "1";
+  if ((m = /^SPLASH (on|off)/.exec(t))) $("mSplash").checked = m[1] === "on";
+  if ((m = /^OD mode=(\d+) slot=(\d+) lut=([0-9A-Fa-f]+)/.exec(t))){
+    odCfg = {mode: +m[1], slot: +m[2], lut: m[3].toUpperCase()};
+    $("oMode").value = String(odCfg.mode); $("oLut").value = odCfg.lut; $("oSlot").value = String(odCfg.slot);
+  }
+  if ((m = /^slot (\d+): fmt (\d), (\d+) bytes, (\d+) sectors, crc=([0-9A-F]+)/.exec(t))) slotTmp.push({n: +m[1], fmt: +m[2], len: +m[3], sect: +m[4], crc: m[5]});
+  if ((m = /^slots: (\d+) used, (\d+) of (\d+) sectors free, largest run (\d+), max (\d+) slots/.exec(t))){
+    slots = slotTmp; slotTmp = [];
+    renderSlots({used: +m[1], free: +m[2], total: +m[3], big: +m[4], max: +m[5]});
+  }
+  if (!/^(UP |LINK |slot |OTA )/.test(t)) return;
+  upq.push(t);
+  if (upq.length > 200) upq.shift();
+  if (upw){ const w = upw; upw = null; w(); }
+}
+
+let lastSum = null;
+const FMT_NAME = ["без сжатия", "LZ", "LZ + строки", "8 цветов, без сжатия", "8 цветов, LZ", "8 цветов, LZ + строки"];
+let drawT = 0, drawTick = 0;
+function drawEnd(txt){ clearInterval(drawTick); drawTick = 0; $("drawInfo").textContent = txt || ""; }
+function drawCountdown(n){
+  drawEnd(); drawT = Date.now();
+  const upd = () => { const s = Math.round((Date.now() - drawT) / 1000); $("drawInfo").textContent = T("Метка рисует слайд {0}: прошло {1} с из примерно 30 (два прохода, панель мигает).", n, s); if (s > 150) drawEnd(); };
+  upd(); drawTick = setInterval(upd, 1000);
+}
+function renderSlots(sum){
+  renderSsMask();
+  const tb = $("slotRows");
+  tb.textContent = "";
+  if (!slots.length){ const tr = tb.insertRow(); const td = tr.insertCell(); td.colSpan = 5; td.innerHTML = "<small>" + T("слотов нет") + "</small>"; }
+  slots.sort((a, b) => a.n - b.n).forEach(s => {
+    const tr = tb.insertRow();
+    { const c0 = tr.insertCell(), th = getThumb(s.n, s.crc);
+      if (th){ const im = document.createElement("img"); im.src = th; im.width = 22; im.height = 60; im.style.verticalAlign = "middle"; im.style.marginRight = "6px"; im.style.border = "1px solid #8884"; c0.appendChild(im); }
+      c0.appendChild(document.createTextNode(String(s.n))); }
+    tr.insertCell().textContent = T(FMT_NAME[s.fmt]) || s.fmt;
+    tr.insertCell().textContent = (s.len / 1024).toFixed(1) + T(" КБ");
+    tr.insertCell().textContent = s.sect;
+    const td = tr.insertCell();
+    for (const [lbl, cmd, cls] of [["показать", 0x45, ""], ["проверить", 0x47, ""], ["стереть", 0x41, "danger"]]){
+      const b = document.createElement("button"); b.className = "sm " + cls; b.textContent = T(lbl);
+      b.onclick = async () => { await send(Uint8Array.from([cmd, s.n])); if (cmd === 0x45) drawCountdown(s.n); if (cmd === 0x41){ try{ localStorage.removeItem("thumb_" + s.n); }catch(e){} setTimeout(() => send("40"), 1500); } };
+      td.appendChild(b); td.appendChild(document.createTextNode(" "));
+    }
+  });
+  lastSum = sum;
+  $("free").innerHTML = "<small>" + T("занято слотов: {0} из {1}, свободно секторов: {2} из {3} (наибольший кусок {4})", sum.used, sum.max, sum.free, sum.total, sum.big) + "</small>";
+  fillSlotSelect();
+}
+function fillSlotSelect(){
+  const sel = $("slot"), keep = sel.value;
+  sel.textContent = "";
+  const used = new Set(slots.map(s => s.n));
+  let firstFree = -1;
+  for (let i = 0; i < 24; i++){
+    const o = document.createElement("option"); o.value = i; o.textContent = i + (used.has(i) ? T(" (занят, будет заменён)") : "");
+    sel.appendChild(o);
+    if (firstFree < 0 && !used.has(i)) firstFree = i;
+  }
+  sel.value = sel.dataset.touched && keep !== "" ? keep : String(firstFree < 0 ? 0 : firstFree);
+}
+$("slot").onchange = () => { $("slot").dataset.touched = "1"; };
+fillSlotSelect();
+
+function nextUp(ms){
+  return new Promise((res, rej) => {
+    const tick = () => {
+      if (upq.length) return res(upq.shift());
+      const timer = setTimeout(() => { upw = null; rej(new Error(T("нет ответа от метки"))); }, ms);
+      upw = () => { clearTimeout(timer); tick(); };
+    };
+    tick();
+  });
+}
+async function nextUpLine(re, ms){
+  const end = Date.now() + ms;
+  for (;;){
+    const t = await nextUp(Math.max(100, end - Date.now()));
+    if (/^UP FAIL/.test(t) || /^OTA FAIL/.test(t) || /^slot \d+: no room/.test(t)) throw new Error(t);
+    if (re.test(t)) return t;
+    if (Date.now() > end) throw new Error(T("нет ответа от метки"));
+  }
+}
+
+function refreshUp(){
+  $("bUp").disabled = !(connected() && frame && packed && fwOk) || upBusy;
+  $("bUpStop").disabled = !upBusy;
+}
+
+/* thumbnails of the uploaded slides are kept in this browser, keyed by slot and the CRC of the stored stream: a thumbnail whose CRC does not match the tag's is not shown */
+const crcHex = v => (v >>> 0).toString(16).toUpperCase().padStart(8, "0");
+function saveThumb(slot, crc){
+  try{
+    const c = document.createElement("canvas"); c.width = 44; c.height = 120;
+    c.getContext("2d").drawImage($("prev"), 0, 0, 44, 120);
+    localStorage.setItem("thumb_" + slot, JSON.stringify({crc: crcHex(crc), img: c.toDataURL("image/png")}));
+  }catch(e){}
+}
+function getThumb(slot, crc){
+  try{ const o = JSON.parse(localStorage.getItem("thumb_" + slot) || "null"); return o && o.crc === String(crc).toUpperCase().padStart(8, "0") ? o.img : null; }catch(e){ return null; }
+}
+async function upload(slot, p, ui){
+  ui = ui || {};
+  upBusy = true; upAbort = false; refreshUp();
+  upq.length = 0;
+  const data = p.data, prog = ui.prog || $("prog"), info = ui.info || $("upinfo");
+  prog.value = 0;
+  try{
+    const crc = crc32(data);
+    info.textContent = T("Метка готовит место…");
+    const win = 8;
+    await send(Uint8Array.from([0x42, slot, ...le32(data.length), ...le32(crc), win, p.fmt]), true);
+    const rdy = await nextUpLine(/^UP READY/, 90000);
+    const chunk = +/chunk=(\d+)/.exec(rdy)[1], w = +/win=(\d+)/.exec(rdy)[1];
+    const noResp = $("wmode").value === "nr" && chr.writeValueWithoutResponse;
+    add(T("загрузка: чанк {0} Б, окно {1}, {2}", chunk, w, T(noResp ? "без подтверждения" : "с подтверждением")), "sys");
+    let off = 0, seq = 0, since = 0;
+    const t0 = performance.now();
+    while (off < data.length){
+      if (upAbort) throw new Error(T("прервано"));
+      const n = Math.min(chunk, data.length - off);
+      const pkt = new Uint8Array(3 + n);
+      pkt[0] = 0x43; pkt[1] = seq & 255; pkt[2] = seq >> 8;
+      pkt.set(data.subarray(off, off + n), 3);
+      if (noResp) await chr.writeValueWithoutResponse(pkt); else if (chr.writeValueWithResponse) await chr.writeValueWithResponse(pkt); else await chr.writeValue(pkt);
+      off += n; seq++; since++;
+      if (since >= w || off >= data.length){
+        since = 0;
+        const a = await nextUpLine(/^UP ACK/, 15000);
+        if (+a.slice(7) !== off) throw new Error(T("неверное подтверждение: ") + a);
+        prog.value = 100 * off / data.length;
+        const sec = (performance.now() - t0) / 1000;
+        info.textContent = T("{0} из {1} КБ, {2} КБ/с", Math.round(off / 1024 * 10) / 10, Math.round(data.length / 1024 * 10) / 10, (off / 1024 / sec).toFixed(1));
+      }
+    }
+    await send(Uint8Array.from([0x44]), true);
+    const ok = await nextUpLine(ui.okRe || /^UP OK/, 60000);
+    prog.value = 100;
+    if (ui.done) ui.done(ok, (performance.now() - t0) / 1000);
+    else { saveThumb(slot, crc); info.textContent = T("Загружено за {0} с. {1}. Теперь можно нажать «показать» в списке слотов.", ((performance.now() - t0) / 1000).toFixed(1), ok); setTimeout(() => send("40"), 300); }
+  }catch(e){
+    add(T("загрузка не удалась: ") + e.message, "sys");
+    info.textContent = T("Не удалось: ") + e.message;
+    if (ui.fail) ui.fail(e);
+    try{ await send(Uint8Array.from([0x49])); }catch(_){}
+  }finally{
+    upBusy = false; refreshUp();
+  }
+}
+
+/* ================= picture ================= */
+let srcImg = null, renderT = 0;
+function schedule(){ clearTimeout(renderT); renderT = setTimeout(render, 60); }
+function render(){
+  if (!srcImg) return;
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d", {willReadFrequently: true});
+  g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+  const rot = +$("rot").value, fit = $("fit").value, sw0 = srcImg.naturalWidth || srcImg.width, sh0 = srcImg.naturalHeight || srcImg.height;
+  const sw = rot % 180 ? sh0 : sw0, sh = rot % 180 ? sw0 : sh0;
+  let dw = W, dh = H;
+  if (fit !== "stretch"){ const k = fit === "cover" ? Math.max(W / sw, H / sh) : Math.min(W / sw, H / sh); dw = sw * k; dh = sh * k; }
+  const iw = rot % 180 ? dh : dw, ih = rot % 180 ? dw : dh;
+  g.translate(W / 2, H / 2); g.rotate(rot * Math.PI / 180);
+  g.imageSmoothingQuality = "high";
+  g.drawImage(srcImg, -iw / 2, -ih / 2, iw, ih);
+  const seven = $("pal").value === "7", pal = seven ? PAL7 : PAL;
+  const pf = prepare(g.getImageData(0, 0, W, H).data, +$("bri").value, +$("con").value);
+  const idx = seven ? quantize(tone7(pf), $("dith").value, PAL7D) : quantize(pf, $("dith").value, pal);
+  const pv = $("prev").getContext("2d"), im = pv.createImageData(W, H);
+  for (let i = 0; i < W * H; i++){ const p = pal[idx[i]]; im.data[i*4] = p[0]; im.data[i*4+1] = p[1]; im.data[i*4+2] = p[2]; im.data[i*4+3] = 255; }
+  pv.putImageData(im, 0, 0);
+  if (seven){ const pl = toPlanes(idx); frame = pl[0]; packed = packPlanes(pl[0], pl[1]); }
+  else { frame = toFrame(idx); packed = packFrame(frame); }
+  const base = seven ? 2 * FRAME_LEN : FRAME_LEN, pct = Math.round(100 * packed.data.length / base);
+  $("upinfo").textContent = T("К загрузке: {0}, {1} КБ из {5} КБ ({2} %), займёт {3} из {4} секторов.", T(FMT_NAME[packed.fmt]), (packed.data.length / 1024).toFixed(1), pct, sectorsFor(packed.data.length), lastSum ? lastSum.total : 49, (base / 1024).toFixed(1));
+  $("prog").value = 0;
+  refreshUp();
+}
+["fit", "rot", "dith", "pal", "bri", "con"].forEach(id => $(id).addEventListener("input", schedule));
+/* the picture settings are remembered in this browser (not on the tag) */
+["fit", "dith", "pal", "bri", "con"].forEach(id => {
+  try{ const v = localStorage.getItem("pic_" + id); if (v !== null && [...($(id).options || [{value: v}])].some(o => o.value === v)) $(id).value = v; }catch(e){}
+  $(id).addEventListener("change", () => { try{ localStorage.setItem("pic_" + id, $(id).value); }catch(e){} });
+});
+$("file").onchange = () => {
+  const f = $("file").files[0];
+  if (!f) return;
+  const img = new Image();
+  img.onload = () => { srcImg = img; render(); };
+  img.onerror = () => add(T("не удалось прочитать картинку"), "sys");
+  img.src = URL.createObjectURL(f);
+};
+
+/* ================= buttons ================= */
+$("bConn").onclick = connect;
+$("bDisc").onclick = () => { if (dev && dev.gatt.connected) dev.gatt.disconnect(); };
+$("bList").onclick = () => send("40");
+$("bEraseAll").onclick = () => { if (confirm(T("Стереть все слоты?"))){ send("41 ff"); setTimeout(() => send("40"), 6000); } };
+$("bUp").onclick = () => { if (frame && packed) upload(+$("slot").value, packed); };
+$("bUpStop").onclick = () => { upAbort = true; };
+/* ---- OTA ---- */
+function renderOta(){
+  const mm = fwInfo && /^437-(\d+)\.(\d+)/.exec(fwInfo.ver);
+  $("otaCard").hidden = !!(mm && +mm[1] === 0 && +mm[2] < 8);		/* OTA exists from 0.8 */
+  $("otaNow").textContent = fwInfo ? T("Сейчас в метке: {0}, образ {1}.", fwInfo.ver, curImg || "?") : T("Текущая прошивка метки появится после подключения.");
+  $("otaTr").textContent = curTr === 1 ? T("Новая прошивка на проверке: она подтверждает себя через 5 с после запуска; до этого загрузка новой невозможна.")
+    : curTr === 2 ? T("Последнее обновление откатилось: новая прошивка не запустилась ({0} запуска без подтверждения), метка вернула прежнюю.", curTn)
+    : curTr === 3 ? T("Откат не удался: нужен программатор (Pico).") : "";
+  $("bFwUp").disabled = !(connected() && otaImg && otaImg.ok) || upBusy || curTr === 1;
+  $("bFwGo").disabled = !(connected() && otaStaged) || upBusy;
+}
+function otaParse(buf){
+  const d = new Uint8Array(buf), r = {ok: false, len: d.length, data: d, why: ""};
+  const dv = new DataView(buf);
+  if (d.length < 0x4000 || d.length > 0x1F000) r.why = T("размер вне 16..124 КБ");
+  else if (!(d[8] === 0x4B && d[9] === 0x4E && d[10] === 0x4C && d[11] === 0x54)) r.why = T("нет заголовка KNLT: это не образ Telink");
+  else if (dv.getUint32(0x18, true) !== d.length) r.why = T("длина в заголовке не совпадает с размером файла");
+  else {
+    /* the text "N437 fw " also occurs alone in the image (a separate string): take the first occurrence followed by "437-" */
+    const key = "N437 fw "; let ver = "";
+    outer: for (let i = 0; i + key.length + 12 < d.length; i++){
+      for (let k = 0; k < key.length; k++) if (d[i + k] !== key.charCodeAt(k)) continue outer;
+      let v = ""; for (let j = 0; j < 12 && d[i + key.length + j] > 32 && d[i + key.length + j] < 127; j++) v += String.fromCharCode(d[i + key.length + j]);
+      if (/^437-/.test(v)) { ver = v; break; }
+    }
+    if (!/^437-/.test(ver)) r.why = T("в образе нет строки «N437 fw 437-…»: это не прошивка для этой метки");
+    else { r.ok = true; r.ver = ver; r.crc = crc32(d); }
+  }
+  return r;
+}
+$("fwFile").onchange = async () => {
+  const f = $("fwFile").files[0]; otaImg = null; otaStaged = null;
+  if (f){
+    otaImg = otaParse(await f.arrayBuffer());
+    $("otaFile").textContent = otaImg.ok ? T("Файл: {0}, {1} байт, CRC-32 {2}.", otaImg.ver, otaImg.len, otaImg.crc.toString(16).toUpperCase().padStart(8, "0")) : T("Файл не подходит: ") + otaImg.why;
+  }
+  renderOta();
+};
+$("bFwUp").onclick = async () => {
+  if (!otaImg || !otaImg.ok) return;
+  otaStaged = null;
+  await upload(0xF0, {fmt: 0, data: otaImg.data}, {prog: $("otaProg"), info: $("otaFile"), okRe: /^OTA STAGED/,
+    done: (ok, sec) => { $("otaFile").textContent = T("Загружено и проверено за {0} с: {1}. Можно переключаться.", sec.toFixed(1), ok); },
+    fail: () => {}});
+  renderOta();
+};
+$("bFwGo").onclick = () => {
+  if (!otaStaged) return;
+  if (!confirm(T("Переключиться на прошивку {0}? Метка перезапустится. Если новая прошивка не запустится, метка сама вернёт прежнюю после трёх неудачных запусков (около минуты); если и откат не сработает, нужен программатор.", otaStaged))) return;
+  send("4F 07 a5");
+};
+
+
+/* ================= slideshow card ================= */
+let ssMaskV = 0xFFFFFF, ssPoll = 30;
+function renderSsMask(){
+  const el = $("ssMask");
+  el.textContent = "";
+  for (let i = 0; i < 24; i++){
+    const used = slots.some(s => s.n === i);
+    const l = document.createElement("label");
+    l.style.marginRight = "8px"; l.style.opacity = used ? "1" : "0.45";
+    const c = document.createElement("input");
+    c.type = "checkbox"; c.className = "nc"; c.dataset.n = i; c.checked = !!(ssMaskV >> i & 1); c.disabled = !connected();
+    c.onchange = () => { ssMaskV = readSsMask(); };
+    l.appendChild(c); l.appendChild(document.createTextNode(String(i)));
+    el.appendChild(l);
+  }
+}
+function readSsMask(){ let v = 0; document.querySelectorAll("#ssMask input").forEach(c => { if (c.checked) v |= 1 << +c.dataset.n; }); return v; }
+renderSsMask();
+$("bSsGet").onclick = () => send("4B");
+$("bSsNext").onclick = () => send("4C");
+$("bSsSet").onclick = () => {
+  const mins = Math.max(1, Math.min(1080, Math.round((+$("ssEvery").value || 60) * +$("ssUnit").value)));
+  const mask = readSsMask() & 0xFFFFFF;
+  if (!mask){ alert(T("Отметьте хотя бы один слайд.")); return; }
+  if ($("ssOn").checked && mins < 5 && !confirm(T("Интервал меньше 5 минут: панель и батарея будут расходоваться быстро. Продолжить?"))) return;
+  const clean = Math.max(0, Math.min(250, Math.round(+$("ssClean").value) || 0));
+  send(Uint8Array.from([0x4A, $("ssOn").checked ? 1 : 0, mins & 255, mins >> 8, mask & 255, ssPoll, clean, +$("ssCleanMode").value, (mask >> 8) & 255, (mask >> 16) & 255]));
+  setTimeout(() => send(Uint8Array.from([0x4F, 8, +$("ssOrder").value])), 400);
+};
+$("mSplash").onchange = () => send(Uint8Array.from([0x4F, 9, $("mSplash").checked ? 1 : 0]));
+
+/* ================= first-start wizard ================= */
+const WIZ_CUR = 96;		/* 0.9f */
+function fwNum(){
+  const m = fwInfo && /^437-(\d+)\.(\d+)([a-z]?)/.exec(fwInfo.ver);
+  return m ? +m[1] * 1000 + +m[2] * 10 + (m[3] ? m[3].charCodeAt(0) - 96 : 0) : -1;
+}
+let wizDrawn = false, ssKnown = false;
+function goTo(id){ const e = $(id); if (e && e.tagName === "DETAILS") e.open = true; if (e) e.scrollIntoView({behavior: "smooth", block: "center"}); }
+function renderWiz(){
+  const ol = $("wizList");
+  if (!ol) return;
+  const on = connected(), v = fwNum(), mirrored = odCfg && odCfg.mode === 2;
+  const steps = [
+    {ok: on, txt: T("Подключитесь к метке (кнопка «Подключиться»; метка должна быть в окне связи: после включения питания или касания телефоном)."), btn: on ? null : [T("Подключиться"), () => $("bConn").click()]},
+    {ok: on && v >= WIZ_CUR, wait: on && v < 0, txt: !on ? T("Проверка прошивки (после подключения).") : v < 0 ? T("Читаю версию прошивки…") : v >= WIZ_CUR ? T("Прошивка {0}: актуальная.", fwInfo.ver)
+        : v < 80 ? T("Прошивка {0}: старше 0.8, обновление по Bluetooth в ней невозможно, перепрошейте программатором (файл firmware/n437_0.9f.bin).", fwInfo.ver)
+        : T("Прошивка {0}: есть новее (0.9f). Скачайте firmware/n437_0.9f.bin из репозитория и загрузите в карточке «Обновление прошивки (OTA)».", fwInfo.ver),
+     btn: (on && v >= 80 && v < WIZ_CUR) ? [T("Открыть карточку OTA"), () => goTo("otaCard")] : null},
+    {ok: on && !!mirrored, wait: on && !odCfg, txt: !on ? T("Проверка ориентации (после подключения).") : !odCfg ? T("Читаю ориентацию…") : mirrored ? T("Ориентация: зеркально по горизонтали (как нужно для этой панели).") : T("Ориентация сейчас не «зеркально по горизонтали»: картинка может выйти зеркальной."),
+     btn: (on && odCfg && !mirrored) ? [T("Поставить «зеркально»"), () => { send(Uint8Array.from([0x4D, 2, odCfg.slot, parseInt(odCfg.lut, 16) & 255])); setTimeout(() => send("4D"), 400); }] : null},
+    {ok: on && slots.length > 0, txt: slots.length ? T("В метке слайдов: {0}.", slots.length) : T("Выберите картинку в карточке «Новая картинка», нажмите «Загрузить в метку»."),
+     btn: (on && !slots.length) ? [T("Выбрать картинку"), () => { goTo("file"); $("file").click(); }] : null},
+    {ok: on && wizDrawn, txt: wizDrawn ? T("Слайд нарисован.") : T("Нарисуйте слайд на панели (около 28 с, панель мигает)."),
+     btn: (on && slots.length && !wizDrawn) ? [T("Показать слайд {0}", slots.slice().sort((a, b) => a.n - b.n)[0].n), () => { const n = slots.slice().sort((a, b) => a.n - b.n)[0].n; send(Uint8Array.from([0x45, n])); drawCountdown(n); }] : null},
+    {ok: on && ssKnown && $("ssOn").checked, txt: ($("ssOn").checked && ssKnown) ? T("Слайд-шоу включено.") : slots.length < 2 ? T("Слайд-шоу: нужно хотя бы два слайда; можно пропустить, если слайд один.") : T("Слайд-шоу: включите в карточке «Слайд-шоу» (интервал, порядок, слайды) и нажмите «Применить»."),
+     btn: (on && slots.length >= 2 && !$("ssOn").checked) ? [T("Открыть карточку слайд-шоу"), () => goTo("ssCard")] : null},
+  ];
+  ol.textContent = "";
+  let cur = steps.findIndex(s => !s.ok);
+  steps.forEach((s, i) => {
+    const li = document.createElement("li");
+    li.style.margin = "6px 0";
+    const mark = s.ok ? "✓ " : i === cur ? "▶ " : "○ ";
+    li.style.opacity = (s.ok || i === cur) ? "1" : "0.6";
+    li.appendChild(document.createTextNode(mark + s.txt + " "));
+    if (s.btn){ const b = document.createElement("button"); b.className = "sm"; b.textContent = s.btn[0]; b.onclick = s.btn[1]; li.appendChild(b); }
+    ol.appendChild(li);
+  });
+  $("wizNote").textContent = cur < 0 ? T("Готово: метка настроена. Мастер можно скрыть.") : "";
+}
+$("wizHide").onclick = () => { $("wizCard").hidden = true; $("bWiz").hidden = false; try{ localStorage.setItem("wiz_hidden", "1"); }catch(e){} };
+$("bWiz").onclick = () => { $("wizCard").hidden = false; $("bWiz").hidden = true; try{ localStorage.removeItem("wiz_hidden"); }catch(e){} renderWiz(); };
+try{ if (localStorage.getItem("wiz_hidden") === "1"){ $("wizCard").hidden = true; $("bWiz").hidden = false; } }catch(e){}
+window.__wizOn = true;
+renderWiz();
+$("bModeGet").onclick = () => send("4F 03");
+$("bModeSet").onclick = () => {
+  const clampW = v => Math.max(10, Math.min(250, Math.round(+v) || 60));
+  const tap = clampW($("mTap").value), boot = clampW($("mBoot").value), m = +$("mMode").value;
+  $("mTap").value = tap; $("mBoot").value = boot;
+  if (!confirm(T(m ? "Включить режим OpenDisplay? Метка перезагрузится и будет всегда доступна по Bluetooth (расход батареи выше)." : "Включить автономный режим? Метка перезагрузится. Дальше Bluetooth включается только после касания телефоном и на время после включения питания; эта страница сможет подключиться в эти окна.") )) return;
+  send(Uint8Array.from([0x4F, 6, tap, boot]));
+  setTimeout(() => send(Uint8Array.from([0x4F, 5, m])), 500);
+};
+$("bOdGet").onclick = () => send("4D");
+$("bOdSet").onclick = () => {
+  const lut = parseInt($("oLut").value || "27", 16) & 255;
+  send(Uint8Array.from([0x4D, +$("oMode").value, Math.max(0, Math.min(23, +$("oSlot").value || 0)), lut]));
+};
+document.querySelectorAll("[data-c]").forEach(b => b.onclick = () => send(b.dataset.c));
+$("bRaw").onclick = () => send($("raw").value);
+$("raw").addEventListener("keydown", e => { if (e.key === "Enter") $("bRaw").click(); });
+$("bClear").onclick = () => { logEl.textContent = ""; plain = ""; };
+$("bCopy").onclick = async () => { try{ await navigator.clipboard.writeText(plain); add(T("лог скопирован"), "sys"); }catch(e){ add(T("не удалось скопировать: ") + e.message, "sys"); } };
+$("bSave").onclick = () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([plain], {type: "text/plain"}));
+  a.download = "badge437-log-" + new Date().toISOString().replace(/[:.]/g, "-") + ".txt";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+/* ================= language switch ================= */
+function setLang(l, save){
+  lang = l;
+  if (save) try{ localStorage.setItem("lang", l); }catch(e){}
+  $("bLang").textContent = lang === "en" ? "RU" : "EN";
+  i18nApply();
+  $("st").textContent = T(stKey) + stExtra;
+  renderFw();
+  if (lastSum) renderSlots(lastSum); else fillSlotSelect();
+  if (srcImg) render();
+}
+$("bLang").onclick = () => setLang(lang === "en" ? "ru" : "en", true);
+i18nInit();
+setLang(lang, false);
+
+/* ================= installable app (PWA) ================= */
+let installEv = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEv = e; $("bInstall").hidden = false; });
+window.addEventListener("appinstalled", () => { installEv = null; $("bInstall").hidden = true; });
+$("bInstall").onclick = async () => { if (!installEv) return; installEv.prompt(); try{ await installEv.userChoice; }catch(e){} installEv = null; $("bInstall").hidden = true; };
+if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
