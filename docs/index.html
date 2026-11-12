@@ -67,8 +67,22 @@ details.card[open]>summary{margin-bottom:8px}
 <div class="card">
   <h2>Слайды в памяти метки</h2>
   <div class="row"><button class="nc" id="bList" disabled>Обновить список</button><span id="free"><small>—</small></span></div>
+  <div class="row"><small id="drawInfo"></small></div>
   <table><thead><tr><th>№</th><th>формат</th><th>размер</th><th>секторов</th><th></th></tr></thead><tbody id="slotRows"><tr><td colspan="5"><small>список ещё не получен</small></td></tr></tbody></table>
   <div class="row" style="margin-top:8px"><button class="nc danger" id="bEraseAll" disabled>Стереть все слоты</button></div>
+</div>
+
+<div class="card" id="ssCard">
+  <h2>Слайд-шоу</h2>
+  <div class="row"><label><input type="checkbox" id="ssOn" class="nc"> листать слайды сами</label>
+    <label>каждые</label><input type="number" id="ssEvery" class="nc" min="1" max="1080" value="60" style="width:4.5em">
+    <select id="ssUnit" class="nc"><option value="1">минут</option><option value="60">часов</option></select>
+    <label>порядок</label><select id="ssOrder" class="nc"><option value="0">по кругу</option><option value="1">случайный</option></select></div>
+  <div class="row"><label>слайды в показе</label><span id="ssMask"></span></div>
+  <div class="row"><label>чистка панели каждые</label><input type="number" id="ssClean" class="nc" min="0" max="250" value="0" style="width:4.5em">
+    <label>слайдов (0 — выкл), способ</label><select id="ssCleanMode" class="nc"><option value="1">белый</option><option value="2">чёрный, затем белый</option></select></div>
+  <div class="row"><button class="nc" id="bSsSet" disabled>Применить</button><button class="nc" id="bSsGet" disabled>Прочитать</button><button class="nc" id="bSsNext" disabled>Следующий слайд сейчас</button></div>
+  <div class="row"><small id="ssInfo">Работает в автономном режиме; слайд меняется и касанием телефона. Если выпал тот же слайд, что уже на панели, он не перерисовывается; порядок «случайный» и пропуск перерисовки есть в прошивке 0.9e и новее.</small></div>
 </div>
 
 <div class="card">
@@ -111,6 +125,7 @@ details.card[open]>summary{margin-bottom:8px}
   <h2>Режим работы</h2>
   <div class="row"><label>режим</label>
     <select id="mMode"><option value="0">Автономный (по умолчанию, экономит батарею)</option><option value="1">OpenDisplay (всегда на связи)</option></select></div>
+  <div class="row"><label><input type="checkbox" id="mSplash" class="nc" checked> заставка при включении и перезагрузке (чёрный фон, BADGE437 PROJECT, версия; прошивка 0.9e)</label></div>
   <div class="row"><label>связь после касания, с</label><input type="number" id="mTap" min="10" max="250" value="60" style="width:4.5em">
     <label>после включения питания, с</label><input type="number" id="mBoot" min="10" max="250" value="120" style="width:4.5em">
     <button class="nc" id="bModeSet" disabled>Применить</button><button class="nc" id="bModeGet" disabled>Прочитать</button></div>
@@ -439,6 +454,27 @@ const EN = {
   "Файл не подходит: ": "The file does not fit: ",
   "Загружено и проверено за {0} с: {1}. Можно переключаться.": "Uploaded and verified in {0} s: {1}. You can switch now.",
   "Переключиться на прошивку {0}? Метка перезапустится. Если новая прошивка не запустится, метка сама вернёт прежнюю после трёх неудачных запусков (около минуты); если и откат не сработает, нужен программатор.": "Switch to firmware {0}? The tag restarts. If the new firmware does not start, the tag brings the previous one back by itself after three failed starts (about a minute); if the rollback fails too, the programmer is needed.",
+  "Слайд-шоу": "Slideshow",
+  "листать слайды сами": "change slides by itself",
+  "каждые": "every",
+  "минут": "minutes",
+  "часов": "hours",
+  "порядок": "order",
+  "по кругу": "in turn",
+  "случайный": "random",
+  "слайды в показе": "slides in the show",
+  "чистка панели каждые": "clean the panel every",
+  "слайдов (0 — выкл), способ": "slides (0 = off), method",
+  "белый": "white",
+  "чёрный, затем белый": "black, then white",
+  "Следующий слайд сейчас": "Next slide now",
+  "Работает в автономном режиме; слайд меняется и касанием телефона. Если выпал тот же слайд, что уже на панели, он не перерисовывается; порядок «случайный» и пропуск перерисовки есть в прошивке 0.9e и новее.": "Works in the standalone mode; a slide also changes when you tap the tag with a phone. If the same slide as the one on the panel comes up, it is not redrawn; the random order and skipping the redraw are in firmware 0.9e and later.",
+  "Отметьте хотя бы один слайд.": "Tick at least one slide.",
+  "заставка при включении и перезагрузке (чёрный фон, BADGE437 PROJECT, версия; прошивка 0.9e)": "splash screen after power-up and restart (black background, BADGE437 PROJECT, the version; firmware 0.9e)",
+  "Метка рисует слайд {0}: прошло {1} с из примерно 30 (два прохода, панель мигает).": "The tag is drawing slide {0}: {1} s of about 30 (two passes, the panel flashes).",
+  "Рисование не удалось.": "Drawing failed.",
+  "Нарисовано.": "Drawn.",
+  "Интервал меньше 5 минут: панель и батарея будут расходоваться быстро. Продолжить?": "An interval under 5 minutes wears the panel and the battery quickly. Continue?",
   "Режим работы": "Operating mode",
   "режим": "mode",
   "Автономный (по умолчанию, экономит батарею)": "Standalone (default, saves the battery)",
@@ -639,12 +675,24 @@ function lineHook(t){
   let m;
   if ((m = /^STATUS fw (\S+)/.exec(t))){ fwInfo = {ver: m[1]}; renderFw(); }
   if ((m = /^STATE .* img=(\S)(?: tr=(\d+) tn=(\d+))?/.exec(t))){ curImg = m[1]; curTr = m[2] === undefined ? null : +m[2]; curTn = m[3] === undefined ? 0 : +m[3]; renderOta(); }
+  if (/^n437: (done|FAILED)/.test(t) && drawTick) drawEnd(T(/FAILED/.test(t) ? "Рисование не удалось." : "Нарисовано."));
   if ((m = /^OTA STAGED (\S+) (\d+) bytes/.exec(t))){ otaStaged = m[1]; renderOta(); }
   if ((m = /^OTA (DONE|HALF-DONE)/.exec(t))){ otaStaged = null; add(T("метка переключилась на новую прошивку и перезапускается: подключитесь снова (окно после включения питания)"), "sys"); renderOta(); }
   if ((m = /^STATE mode=(\d) radio=(\d) wt=(\d+) wb=(\d+)/.exec(t)) || (m = /^SYS .* mode=(\d) wt=(\d+) wb=(\d+)/.exec(t))){
     const w = m.length === 5 ? [m[3], m[4]] : [m[2], m[3]];
     $("mMode").value = m[1]; $("mTap").value = w[0]; $("mBoot").value = w[1];
   }
+  if ((m = /^SS (on|off) every=(\d+) mask=([0-9A-Fa-f]+) poll=(\d+) clean=(\d+)\/(\d+) last=(-?\d+) el=(\d+)(?: order=(\d))?/.exec(t))){
+    const ev = +m[2];
+    $("ssOn").checked = m[1] === "on";
+    if (ev >= 60 && ev % 60 === 0){ $("ssEvery").value = ev / 60; $("ssUnit").value = "60"; } else { $("ssEvery").value = ev; $("ssUnit").value = "1"; }
+    ssMaskV = parseInt(m[3], 16) & 0xFFFFFF; ssPoll = +m[4];
+    $("ssClean").value = m[5]; $("ssCleanMode").value = m[6] === "2" ? "2" : "1";
+    if (m[9] !== undefined) $("ssOrder").value = m[9];
+    renderSsMask();
+  }
+  if ((m = /^SYS .* sp=(\d)/.exec(t))) $("mSplash").checked = m[1] === "1";
+  if ((m = /^SPLASH (on|off)/.exec(t))) $("mSplash").checked = m[1] === "on";
   if ((m = /^OD mode=(\d+) slot=(\d+) lut=([0-9A-Fa-f]+)/.exec(t))){
     odCfg = {mode: +m[1], slot: +m[2], lut: m[3].toUpperCase()};
     $("oMode").value = String(odCfg.mode); $("oLut").value = odCfg.lut; $("oSlot").value = String(odCfg.slot);
@@ -662,20 +710,30 @@ function lineHook(t){
 
 let lastSum = null;
 const FMT_NAME = ["без сжатия", "LZ", "LZ + строки", "8 цветов, без сжатия", "8 цветов, LZ", "8 цветов, LZ + строки"];
+let drawT = 0, drawTick = 0;
+function drawEnd(txt){ clearInterval(drawTick); drawTick = 0; $("drawInfo").textContent = txt || ""; }
+function drawCountdown(n){
+  drawEnd(); drawT = Date.now();
+  const upd = () => { const s = Math.round((Date.now() - drawT) / 1000); $("drawInfo").textContent = T("Метка рисует слайд {0}: прошло {1} с из примерно 30 (два прохода, панель мигает).", n, s); if (s > 150) drawEnd(); };
+  upd(); drawTick = setInterval(upd, 1000);
+}
 function renderSlots(sum){
+  renderSsMask();
   const tb = $("slotRows");
   tb.textContent = "";
   if (!slots.length){ const tr = tb.insertRow(); const td = tr.insertCell(); td.colSpan = 5; td.innerHTML = "<small>" + T("слотов нет") + "</small>"; }
   slots.sort((a, b) => a.n - b.n).forEach(s => {
     const tr = tb.insertRow();
-    tr.insertCell().textContent = s.n;
+    { const c0 = tr.insertCell(), th = getThumb(s.n, s.crc);
+      if (th){ const im = document.createElement("img"); im.src = th; im.width = 22; im.height = 60; im.style.verticalAlign = "middle"; im.style.marginRight = "6px"; im.style.border = "1px solid #8884"; c0.appendChild(im); }
+      c0.appendChild(document.createTextNode(String(s.n))); }
     tr.insertCell().textContent = T(FMT_NAME[s.fmt]) || s.fmt;
     tr.insertCell().textContent = (s.len / 1024).toFixed(1) + T(" КБ");
     tr.insertCell().textContent = s.sect;
     const td = tr.insertCell();
     for (const [lbl, cmd, cls] of [["показать", 0x45, ""], ["проверить", 0x47, ""], ["стереть", 0x41, "danger"]]){
       const b = document.createElement("button"); b.className = "sm " + cls; b.textContent = T(lbl);
-      b.onclick = async () => { await send(Uint8Array.from([cmd, s.n])); if (cmd === 0x41) setTimeout(() => send("40"), 1500); };
+      b.onclick = async () => { await send(Uint8Array.from([cmd, s.n])); if (cmd === 0x45) drawCountdown(s.n); if (cmd === 0x41){ try{ localStorage.removeItem("thumb_" + s.n); }catch(e){} setTimeout(() => send("40"), 1500); } };
       td.appendChild(b); td.appendChild(document.createTextNode(" "));
     }
   });
@@ -723,6 +781,18 @@ function refreshUp(){
   $("bUpStop").disabled = !upBusy;
 }
 
+/* thumbnails of the uploaded slides are kept in this browser, keyed by slot and the CRC of the stored stream: a thumbnail whose CRC does not match the tag's is not shown */
+const crcHex = v => (v >>> 0).toString(16).toUpperCase().padStart(8, "0");
+function saveThumb(slot, crc){
+  try{
+    const c = document.createElement("canvas"); c.width = 44; c.height = 120;
+    c.getContext("2d").drawImage($("prev"), 0, 0, 44, 120);
+    localStorage.setItem("thumb_" + slot, JSON.stringify({crc: crcHex(crc), img: c.toDataURL("image/png")}));
+  }catch(e){}
+}
+function getThumb(slot, crc){
+  try{ const o = JSON.parse(localStorage.getItem("thumb_" + slot) || "null"); return o && o.crc === String(crc).toUpperCase().padStart(8, "0") ? o.img : null; }catch(e){ return null; }
+}
 async function upload(slot, p, ui){
   ui = ui || {};
   upBusy = true; upAbort = false; refreshUp();
@@ -761,7 +831,7 @@ async function upload(slot, p, ui){
     const ok = await nextUpLine(ui.okRe || /^UP OK/, 60000);
     prog.value = 100;
     if (ui.done) ui.done(ok, (performance.now() - t0) / 1000);
-    else { info.textContent = T("Загружено за {0} с. {1}. Теперь можно нажать «показать» в списке слотов.", ((performance.now() - t0) / 1000).toFixed(1), ok); setTimeout(() => send("40"), 300); }
+    else { saveThumb(slot, crc); info.textContent = T("Загружено за {0} с. {1}. Теперь можно нажать «показать» в списке слотов.", ((performance.now() - t0) / 1000).toFixed(1), ok); setTimeout(() => send("40"), 300); }
   }catch(e){
     add(T("загрузка не удалась: ") + e.message, "sys");
     info.textContent = T("Не удалось: ") + e.message;
@@ -802,6 +872,11 @@ function render(){
   refreshUp();
 }
 ["fit", "rot", "dith", "pal", "bri", "con"].forEach(id => $(id).addEventListener("input", schedule));
+/* the picture settings are remembered in this browser (not on the tag) */
+["fit", "dith", "pal", "bri", "con"].forEach(id => {
+  try{ const v = localStorage.getItem("pic_" + id); if (v !== null && [...($(id).options || [{value: v}])].some(o => o.value === v)) $(id).value = v; }catch(e){}
+  $(id).addEventListener("change", () => { try{ localStorage.setItem("pic_" + id, $(id).value); }catch(e){} });
+});
 $("file").onchange = () => {
   const f = $("file").files[0];
   if (!f) return;
@@ -870,6 +945,37 @@ $("bFwGo").onclick = () => {
   send("4F 07 a5");
 };
 
+
+/* ================= slideshow card ================= */
+let ssMaskV = 0xFFFFFF, ssPoll = 30;
+function renderSsMask(){
+  const el = $("ssMask");
+  el.textContent = "";
+  for (let i = 0; i < 24; i++){
+    const used = slots.some(s => s.n === i);
+    const l = document.createElement("label");
+    l.style.marginRight = "8px"; l.style.opacity = used ? "1" : "0.45";
+    const c = document.createElement("input");
+    c.type = "checkbox"; c.className = "nc"; c.dataset.n = i; c.checked = !!(ssMaskV >> i & 1); c.disabled = !connected();
+    c.onchange = () => { ssMaskV = readSsMask(); };
+    l.appendChild(c); l.appendChild(document.createTextNode(String(i)));
+    el.appendChild(l);
+  }
+}
+function readSsMask(){ let v = 0; document.querySelectorAll("#ssMask input").forEach(c => { if (c.checked) v |= 1 << +c.dataset.n; }); return v; }
+renderSsMask();
+$("bSsGet").onclick = () => send("4B");
+$("bSsNext").onclick = () => send("4C");
+$("bSsSet").onclick = () => {
+  const mins = Math.max(1, Math.min(1080, Math.round((+$("ssEvery").value || 60) * +$("ssUnit").value)));
+  const mask = readSsMask() & 0xFFFFFF;
+  if (!mask){ alert(T("Отметьте хотя бы один слайд.")); return; }
+  if ($("ssOn").checked && mins < 5 && !confirm(T("Интервал меньше 5 минут: панель и батарея будут расходоваться быстро. Продолжить?"))) return;
+  const clean = Math.max(0, Math.min(250, Math.round(+$("ssClean").value) || 0));
+  send(Uint8Array.from([0x4A, $("ssOn").checked ? 1 : 0, mins & 255, mins >> 8, mask & 255, ssPoll, clean, +$("ssCleanMode").value, (mask >> 8) & 255, (mask >> 16) & 255]));
+  setTimeout(() => send(Uint8Array.from([0x4F, 8, +$("ssOrder").value])), 400);
+};
+$("mSplash").onchange = () => send(Uint8Array.from([0x4F, 9, $("mSplash").checked ? 1 : 0]));
 $("bModeGet").onclick = () => send("4F 03");
 $("bModeSet").onclick = () => {
   const clampW = v => Math.max(10, Math.min(250, Math.round(+v) || 60));

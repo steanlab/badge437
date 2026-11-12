@@ -1,16 +1,24 @@
-# n437 firmware 0.9d: release notes
+# n437 firmware 0.9e: release notes
 
-Repo path: `steanlab/badge437` (public) → `firmware/RELEASE_NOTES.md`. Release date: 12 November 2026. The previous release, 0.9a (`firmware/n437_0.9a.bin`), stays in the repository.
+Repo path: `steanlab/badge437` (public) → `firmware/RELEASE_NOTES.md`. Release date: 12 November 2026. The previous releases, 0.9d (`firmware/n437_0.9d.bin`) and 0.9a (`firmware/n437_0.9a.bin`), stay in the repository.
 
 | | |
 |---|---|
-| File | `firmware/n437_0.9d.bin` (101 072 bytes) |
-| SHA-256 | `d5320443634c0eb60b8a943ea9d88376d800a0f6447aaf66d52caf52bf6611eb` (also in `firmware/SHA256SUMS.txt`; check with `sha256sum -c SHA256SUMS.txt`) |
-| Version string | `437-0.9d` (boot line `N437 fw 437-0.9d`) |
+| File | `firmware/n437_0.9e.bin` (102 568 bytes) |
+| SHA-256 | `06a17e87c2644745e3a8705895bd4a617fae0920e8da4863fba3cd69fd16e692` (also in `firmware/SHA256SUMS.txt`; check with `sha256sum -c SHA256SUMS.txt`) |
+| Version string | `437-0.9e` (boot line `N437 fw 437-0.9e`) |
 | Target | Hanshow Nebular Pro 437Q-N (Telink TLSR8258, 512 KiB flash, 4.37" 176 x 480 black / white / red / yellow panel) |
-| Header | `KNLT` at bytes 8..11, length field at 0x18 = file length = 101 072 |
+| Header | `KNLT` at bytes 8..11, length field at 0x18 = file length = 102568 |
 | Install | with the programmer the first time ([user guide](../docs/USER_GUIDE.md)), later over Bluetooth (OTA) from 0.9 or later; the memory layout is unchanged, pictures and settings are kept |
-| Page | <https://steanlab.github.io/badge437/> (new page with the "colours" selector) |
+| Page | <https://steanlab.github.io/badge437/> (new slideshow card, thumbnails, splash switch) |
+
+## What is new since 0.9d
+
+* **Boot splash.** After a power-up or restart the tag draws a black picture with **BADGE437 PROJECT** in big white letters and the firmware version under it (two passes, about 28 s). A restart after an update shows the new version. It can be switched off (card "Operating mode" or `4F 09 00`). With the slideshow on, the first slide follows 2 minutes after the splash.
+* **Slide order.** The slideshow can go in turn or in random order (random never repeats the slide that is on the panel). Setting `4F 08 n` or the new slideshow card of the page.
+* **No redraw of the same slide.** If the next slide is the one already on the panel and unchanged (a single slide, or a tap with one slide), the panel is not redrawn: no 28 s and no energy for nothing.
+* **Page:** a **slideshow card** (switch, interval in minutes or hours, order, slides, clean-up of the panel, "next slide now"), thumbnails of the uploaded slides in the list, a counter while a slide is drawn, a warning for intervals under 5 minutes, remembered picture settings, eight colours with ochre, better tone mapping of greys.
+* Tested on a tag (12 November 2026): update from 0.9d over Bluetooth, the splash appears; draw time of a two-pass picture about 28 s; slideshow with both slide formats changes by a tap.
 
 ## What is new since 0.9a
 
@@ -68,7 +76,8 @@ Tested by the author on the **same one tag** (powered from the programmer, no ba
 | 0.8 | OTA over Bluetooth, two image areas |
 | 0.9 / 0.9a | trial and rollback; 0.9a: watchdog armed after the initialisation (released) |
 | 0.9b / 0.9c | two-pass drawing, dark red as red (test builds, not released) |
-| 0.9d | eight colours, two-plane slot formats, default orientation (this release) |
+| 0.9d | eight colours, two-plane slot formats, default orientation |
+| 0.9e | boot splash, slide order, no redraw of the same slide (this release) |
 
 ## Memory layout (data is not kept across layout changes)
 

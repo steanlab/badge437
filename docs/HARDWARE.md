@@ -53,9 +53,9 @@ What is deliberately **not** in this document: contents of any flash backup, the
 
 Addresses are flash addresses; the Telink boot ROM starts from address 0. The stock firmware keeps its application at the bottom of the flash and its own data higher up; our firmware's first start **erases every non-blank sector of `0x40000`..`0x76FFF`** (what the stock firmware keeps there is in your backup). Layout of 0.9a:
 
-| Range | Use in our firmware 0.9d |
+| Range | Use in our firmware 0.9e |
 |---|---|
-| `0x00000`..`0x1FFFF` | **image A** (128 KiB; the programmer writes here; 0.9d is 101 072 bytes) |
+| `0x00000`..`0x1FFFF` | **image A** (128 KiB; the programmer writes here; 0.9e is 102 568 bytes) |
 | `0x20000`..`0x3FFFF` | **image B** (OTA target while A runs, and the other way round) |
 | `0x40000` | format marker (`N437FMT5`) |
 | `0x41000` | device name log |

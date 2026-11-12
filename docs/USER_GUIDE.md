@@ -1,6 +1,6 @@
-# n437 firmware 0.9d: user guide
+# n437 firmware 0.9e: user guide
 
-Repo path: `steanlab/badge437` (public) → `docs/USER_GUIDE.md`. Russian: `docs/USER_GUIDE.ru.md`. Firmware: `firmware/n437_0.9d.bin`. Page: <https://steanlab.github.io/badge437/>.
+Repo path: `steanlab/badge437` (public) → `docs/USER_GUIDE.md`. Russian: `docs/USER_GUIDE.ru.md`. Firmware: `firmware/n437_0.9e.bin`. Page: <https://steanlab.github.io/badge437/>.
 
 Unofficial project. Flashing replaces the original firmware of the tag; do it only if you accept that, at your own risk. Tested on one tag.
 
@@ -20,14 +20,14 @@ Unofficial project. Flashing replaces the original firmware of the tag; do it on
 3. Dry run (backup and plan only, nothing is written):
 
    ```
-   python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9d.bin --no-questions --seconds 5
+   python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9e.bin --no-questions --seconds 5
    ```
 
    It must end with `plan_verified` and no error. It refuses a tag whose flash protection status is not `2C`, or whose factory record it does not recognise: then stop and ask.
 4. Flash:
 
    ```
-   python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9d.bin --apply --no-questions --seconds 5
+   python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9e.bin --apply --no-questions --seconds 5
    ```
 
    It must end with `whole_flash_verified` and `protection_restored`. Only the application zone (the first 128 KiB of the flash) is written; the factory data stays untouched.
@@ -55,20 +55,26 @@ Card "New picture":
 
 A picture that is already drawn stays on the panel without power (e-paper). The panel shows what was drawn last; there is no live preview.
 
-## 4. Slideshow, tap, name (developer card)
+## 4. Slideshow, tap, splash, name
 
-The page has no slideshow card yet; the settings are sent as hex bytes in the field "command (hex)" of the card "For developers" (every byte = two hex digits). The tag answers with a line `SS ...`.
+**Card "Slideshow"** on the page: tick "change slides by itself", set the interval (1 minute to 18 hours), the **order** (in turn or random; random needs 0.9e), tick the slides that take part, optionally a **clean-up** of the panel every N slides (reduces ghosting: "white", or "black, then white"), then "Apply". "Read" shows what the tag holds; "Next slide now" draws the next slide at once. An interval under 5 minutes asks for confirmation (it wears the panel and the battery). If the next slide is the one already on the panel and unchanged (for example only one slide is ticked), the tag does not redraw it.
+
+A **tap** (touch the tag with a phone, NFC) draws the next filled slot also when the slideshow is off, and opens a 60 s window. Slides that are empty are skipped. Where the NFC antenna is: the loop runs around the board edge; hold the back of the phone against the tag.
+
+**Boot splash (0.9e).** After a power-up or restart (also after an update) the tag draws a black picture with **BADGE437 PROJECT** in big white letters and the firmware version under it (about 28 s). With the slideshow on, the first slide follows 2 minutes later. A tap before the splash is drawn cancels it. Switch it off with the checkbox in the card "Operating mode".
+
+The same settings as raw commands (card "For developers", hex bytes; the tag answers with a line `SS ...`):
 
 | Command | Meaning |
 |---|---|
 | `4A 01 3C 00 07 1E` | slideshow **on**, every `3C 00` = 60 minutes (16 bit, little endian, 1..1080), slides 0, 1, 2 (`07` = bits of slots 0..7; further slot bits in extra bytes: see PROTOCOL.md), `1E` unused in standalone |
 | `4A 00 3C 00 07 1E` | slideshow off |
-| `4A 01 3C 00 07 1E 05 02` | as above, plus a clean-up draw before every 5th slide (`02` = black, then white; `01` = white only) to reduce ghosting |
+| `4A 01 3C 00 07 1E 05 02` | as above, plus a clean-up draw before every 5th slide (`02` = black, then white; `01` = white only) |
+| `4F 08 01` / `4F 08 00` | random / in turn |
+| `4F 09 01` / `4F 09 00` | boot splash on / off |
 | `4C` | draw the next slide now |
 | `4B` | report the slideshow settings |
 | `4E 41 42 43` | name tail: the tag is called `OD-ABC` (1..5 characters; `4E` alone = default) |
-
-A **tap** (touch the tag with a phone, NFC) draws the next filled slot also when the slideshow is off, and opens a 60 s window. The tag also draws a slide at power-up when the slideshow is on. Slides that are empty are skipped. Where the NFC antenna is: the loop runs around the board edge; hold the back of the phone against the tag, a short touch is enough.
 
 ## 5. Operating modes
 

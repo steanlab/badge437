@@ -4,7 +4,7 @@ Repo path: `steanlab/badge437` (public).
 
 Own firmware and a web control page for the **Hanshow Nebular Pro 437Q-N**: a 4.37" electronic shelf label with a 480 x 176 pixel black / white / red / yellow e-paper panel, a Telink TLSR8258 Bluetooth LE module, an RGB LED and an NFC chip. The firmware replaces the original one and turns the tag into a small picture frame / badge that you control from a phone or a PC.
 
-**Release 0.9d (12 November 2026)**: [`firmware/n437_0.9d.bin`](firmware/n437_0.9d.bin) (the previous 0.9a stays in the same folder), notes in [`firmware/RELEASE_NOTES.md`](firmware/RELEASE_NOTES.md). Control page: <https://steanlab.github.io/badge437/> (Chrome or Edge, Android or desktop; Web Bluetooth).
+**Release 0.9e (12 November 2026)**: [`firmware/n437_0.9e.bin`](firmware/n437_0.9e.bin) (0.9d and 0.9a stay in the same folder), notes in [`firmware/RELEASE_NOTES.md`](firmware/RELEASE_NOTES.md). Control page: <https://steanlab.github.io/badge437/> (Chrome or Edge, Android or desktop; Web Bluetooth).
 
 Unofficial: not affiliated with Hanshow, Telink, OpenDisplay or OpenEPaperLink. **Flashing replaces the original firmware of your tag and needs a programmer wire; use it at your own risk, no warranty.** Tested so far on **one** tag.
 
@@ -14,7 +14,7 @@ A tag comes with the original Hanshow firmware, and **it cannot be updated over 
 
 | Stage | How | When |
 |---|---|---|
-| **1. First installation** | **With a programmer wire (Telink SWS, four wires to pads on the board), once.** You back up the original flash of your tag first, then write `firmware/n437_0.9d.bin`. See the [user guide](docs/USER_GUIDE.md), section 1 | once per tag; **there is no way around it**: without a programmer the tag stays original |
+| **1. First installation** | **With a programmer wire (Telink SWS, four wires to pads on the board), once.** You back up the original flash of your tag first, then write `firmware/n437_0.9e.bin`. See the [user guide](docs/USER_GUIDE.md), section 1 | once per tag; **there is no way around it**: without a programmer the tag stays original |
 | **2. Everything afterwards** | **Over Bluetooth from the page**: pictures, settings and **firmware updates (OTA)**; no wires | every later change; OTA needs firmware 0.9 or later already running on the tag |
 
 So: if you do not have (or do not want to build) a programmer, this project is not for you yet. If you do, do stage 1 once and forget the wire.
@@ -24,8 +24,9 @@ So: if you do not have (or do not want to build) a programmer, this project is n
 | | |
 |---|---|
 | Pictures | Up to 24 pictures ("slots") are stored in the tag's flash and survive power loss. A picture is 176 x 480 pixels in four colours (white, black, dark red, yellow) or, with the page's "8 colours" option, eight (adds orange, ochre, grey, dark grey; needs 0.9d); the page converts any image (fit, rotation, dithering, brightness / contrast, preview) and uploads it compressed (a flat graphic takes a few hundred bytes, a dithered photo about 90 % of the raw 21 120 bytes) |
-| Slideshow | Slides change by timer (1 minute to 18 hours), the tag sleeps in between; a slide also changes when you **touch the tag with a phone (NFC tap = next slide)** |
+| Slideshow | Slides change by timer (1 minute to 18 hours), in turn or in random order, set on the page; the same slide is not redrawn; the tag sleeps in between; a slide also changes when you **touch the tag with a phone (NFC tap = next slide)** |
 | Two operating modes | **Standalone** (default): Bluetooth is only on for a window after power-up and after a tap, deep sleep otherwise, to save the battery. **OpenDisplay**: always connectable, works with the OpenDisplay web tool and Home Assistant (direct write of one picture) |
+| Boot splash | After a power-up or restart the tag shows BADGE437 PROJECT and the firmware version (can be switched off) |
 | LED | Short, dim flashes tell the state (window open, linked, slide change, error); can be reduced |
 | NFC | The tag carries a text record with version, last panel temperature, slide count and so on, readable by any phone |
 | Update over Bluetooth (OTA) | New firmware is uploaded into a second image area from the page, checked, started on trial and **rolled back by the tag itself** if it does not run properly (needs 0.9 or later already running) |
@@ -42,11 +43,11 @@ So: if you do not have (or do not want to build) a programmer, this project is n
 | File | For whom |
 |---|---|
 | [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md), [`docs/USER_GUIDE.ru.md`](docs/USER_GUIDE.ru.md) | users: flash, first start, page, modes, LED, NFC, slideshow, OTA, problems |
-| [`firmware/RELEASE_NOTES.md`](firmware/RELEASE_NOTES.md) | what is in 0.9d, what was tested on a tag, what is not done, history |
+| [`firmware/RELEASE_NOTES.md`](firmware/RELEASE_NOTES.md) | what is in 0.9e, what was tested on a tag, what is not done, history |
 | [`docs/HARDWARE.md`](docs/HARDWARE.md) | for those who want to write their own firmware: the tag (MCU, pins, flash map and what must never be written, panel basics, NFC, LED, power, Telink pitfalls); **not** the panel drive recipe |
 | [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | Bluetooth commands of the firmware, OpenDisplay subset, basic slot and image formats |
 
-## Not done / limits (0.9d)
+## Not done / limits (0.9e)
 
 * **No authentication.** In standalone mode anyone near the tag can connect during an open window (after power-up or a tap) and change pictures, settings and even upload firmware; the window is short and the physical tap or power cycle is the only protection. OpenDisplay encryption is not implemented.
 * The battery voltage is not measured yet and the energy consumption was not measured; no battery-life figure is given. The tag's cell is probably a non-rechargeable lithium cell (see the hardware notes): never charge it.
