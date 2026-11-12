@@ -41,24 +41,31 @@ These are the numbers of the ready UF2. If you build the bridge firmware yoursel
 
 1. **Keep the original.** The software reads the whole flash of the tag before it writes anything and stores it as a backup file. **Keep that file**: it holds the factory data of your panel (the waveform data the firmware needs, see [HARDWARE.md](HARDWARE.md)), the radio calibration and the factory record of your tag. Never publish it (it contains your tag's address). Read the flash twice and compare the copies if you like.
 2. Wire as in section 0, then plug the programmer's USB into the computer.
-3. **Software.** The author's procedure (verified on this tag) used the command-line flasher `nebular_debug_custom.py` with the Hanshow bridge. It already knows the 437Q-N (flash id `EB 60 13`, factory record at `0x7E000`, application zone `0x00000`..`0x1FFFF`), refuses to write if the factory record is not the expected one, and writes only the changed sectors of the application zone. **That script is not distributed in this repository.** The same chip and flash are supported by the writing tools of the bridge repository (browser page "tools" and `flash_application.py`: single application `.bin`, two full reads, backup, write, verification, chip `026255` / flash `EB6013`); the author **has not tried them with this file**, and the repository itself calls their writing path experimental. With any tool: write `firmware/n437_0.9e.bin` at flash address `0x00000` only; never erase the whole chip; the factory data (`0x78000`..`0x7FFFF`) must stay as it is.
-4. With the author's script (Ubuntu, the programmer shows up as a USB serial port):
+3. **Software.** The flasher is [`tools/nebular_debug_custom.py`](../tools/nebular_debug_custom.py) by Gerard780 (the author of the bridge), included unchanged, see [`tools/README.md`](../tools/README.md). It already knows the 437Q-N (flash id `EB 60 13`, factory record at `0x7E000`, application zone `0x00000`..`0x1FFFF`), refuses to write if the factory record is not the expected one, writes only the changed sectors of the application zone and puts back the flash protection. Needs Python 3.9 or newer; on Ubuntu (the author used Python 3.12.3):
 
    ```
-   python3 nebular_debug_custom.py --model 437 --list-ports
+   python3 -m venv .venv
+   .venv/bin/pip install pyserial pyusb libusb-package
+   ```
+
+   Use `.venv/bin/python` instead of `python3` below, from the repository folder. On the first run the script downloads four helper modules from the bridge repository and checks their hashes (Internet needed once). Linux needs permission for the serial ports (`dialout`, section 0) and for USB; if USB access is denied, use the udev rules of the bridge project or run the command with `sudo`. Close other serial programs first. With one bridge connected the ports are found automatically; with several use `--bridge-serial`. The bridge firmware must be v1.4 to v1.6 with reset enabled (the ready UF2 is).
+4. The programmer shows up as a USB serial port:
+
+   ```
+   python3 tools/nebular_debug_custom.py --model 437 --list-ports
    ```
 
    The bridge must be in the list. Then the **dry run** (backup and plan only, nothing is written):
 
    ```
-   python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9e.bin --no-questions --seconds 5
+   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9e.bin --no-questions --seconds 5
    ```
 
    It must end with `plan_verified` and no error. It refuses a tag whose flash protection status is not `2C`, or whose factory record it does not recognise: then stop and ask.
 5. **Flash:**
 
    ```
-   python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9e.bin --apply --no-questions --seconds 5
+   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9e.bin --apply --no-questions --seconds 5
    ```
 
    It must end with `whole_flash_verified` and `protection_restored`. Only the application zone (the first 128 KiB of the flash) is written; the factory data stays untouched.

@@ -14,3 +14,5 @@ In short (the full terms at the links above are what applies): you may use, copy
 Required Notice: Copyright 2026 steanlab (https://github.com/steanlab/badge437)
 
 The licences apply to the work of steanlab only. Third-party parts inside the binaries keep their own terms: see [`NOTICE.md`](NOTICE.md). This file is not legal advice.
+
+Exception: `tools/nebular_debug_custom.py` is the work of Gerard780 and is not covered by this licence (see `NOTICE.md`).
