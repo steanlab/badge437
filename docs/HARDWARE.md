@@ -53,9 +53,9 @@ What is deliberately **not** in this document: contents of any flash backup, the
 
 Addresses are flash addresses; the Telink boot ROM starts from address 0. The stock firmware keeps its application at the bottom of the flash and its own data higher up; our firmware's first start **erases every non-blank sector of `0x40000`..`0x76FFF`** (what the stock firmware keeps there is in your backup). Layout of 0.9a:
 
-| Range | Use in our firmware 0.9a |
+| Range | Use in our firmware 0.9d |
 |---|---|
-| `0x00000`..`0x1FFFF` | **image A** (128 KiB; the programmer writes here; 0.9a is 100 308 bytes) |
+| `0x00000`..`0x1FFFF` | **image A** (128 KiB; the programmer writes here; 0.9d is 101 072 bytes) |
 | `0x20000`..`0x3FFFF` | **image B** (OTA target while A runs, and the other way round) |
 | `0x40000` | format marker (`N437FMT5`) |
 | `0x41000` | device name log |
@@ -81,13 +81,13 @@ The stock firmware does not contain the drive waveforms of the panel; it reads t
 * **CRC:** the first two bytes (little endian) are the CRC-16 (polynomial `0x1021`, initial value `0x1D0F`, MSB first, no final XOR) of the other `0x2FFE` bytes. **Check it before every draw and refuse to draw if it fails.** One tag we saw had a damaged part of the block; the stock firmware cannot draw on such a tag, the CRC check catches it.
 * **Header:** zero-separated production strings (model `S437`, `480`, `176`, panel lot, date), then at offset `+0x5F` a table of **8 temperature bands**, stride 20 bytes. Each entry: `lo` u16, `hi` u16 (1/100 degree C; the `lo` of the first entry must be read as 0), then the descriptor of the **long** record and the descriptor of the **short** record, each `type u8 (01 long / 02 short), length u16, flash address u24, 00`. The band table **differs between tags** and so does the record length (we saw 552 and 546 bytes): **read the table and the lengths from the header, never use fixed numbers.**
 * **Record:** `7 parameter bytes (p0..p6)`, then **528 table bytes**, then a tail. The tail is a 16-bit little-endian length followed by entries `command u8, length u8, data` (the stock draw routine looks entries up by command; entry `06` must be present). The waveform sent to the panel is the first 535 bytes (parameters + table).
-* **How it is used:** pick the band whose upper limit is above the panel temperature (section 6) and use its **long** record (the sequence in section 7 uses one pass with the long record). The short record belongs to a second pass that we do not use.
+* **How it is used:** pick the band whose upper limit is above the panel temperature (section 6) and use its **long** record for pass 0; since 0.9b the **short** record of the same band is used for a second pass (section 7a).
 
 ## 6. Panel temperature
 
 The panel has a temperature sensor read through the data line: `CMD 41 00`, `CMD 40`, wait until BUSY goes high (about 12 ms), then read **two bytes**: the integer part in degrees C and the fraction in 1/256 (`17 80` = 23.5 C) [verified]. The reading is **too high right after a refresh and sometimes after a power-up**; our firmware ignores a value more than 8 C above the last good reading (younger than 30 minutes) and, if the reading is not usable, power-cycles the panel (2, 5, 10 s) and reads again. Draw only between -10 and +50 C.
 
-## 7. The panel sequence our firmware sends (one pass, about 18 s)
+## 7. The panel sequence our firmware sends (one pass, about 18 s; a picture is two passes since 0.9b)
 
 SPI-like, mode 0, **bit-banged**, MSB first (data set while the clock is low, sampled on the rising edge, the clock idles low). One command is one CS burst: CS low, DC low for the command byte, DC high for its data bytes, CS high. BUSY high = idle.
 
@@ -117,6 +117,18 @@ SPI-like, mode 0, **bit-banged**, MSB first (data set while the clock is low, sa
 | 22 | panel power off: release PB5 | |
 
 If BUSY does not come back inside its limit, stop, switch the panel power off and signal an error. **Do not start a draw if the waveform CRC failed or the temperature is out of range.** A wrong picture does no harm; the next draw replaces it. Do not refresh more often than a few times a minute.
+
+## 7a. The second pass and the colours
+
+One long pass (section 7) draws all four colours, but **black comes out dark maroon**. The same controller family on the 970Q-N is driven in two passes; the 437Q-N works the same way:
+
+1. **Pass 0:** section 7 with the **long** record of the temperature band and `CMD 50` data `37`.
+2. Panel power off, **pause about 4 s** (starting pass 1 at once can leave its refresh silently skipped on the 970).
+3. **Pass 1:** the whole of section 7 again (power on, reset, temperature, init), but with the **short** record of the same band and `CMD 50` data `97`; the pixel data of pass 1 follow. (On the 970Q-N its refresh takes about 0.2 s; not timed on the 437Q-N.)
+
+Pixel values (2 bits) sent in `CMD 10` for each colour, pass 0 / pass 1: white 1 / 1, yellow 2 / 1, orange 0 / 1, dark red 3 / 1, black 1 / 0, grey 1 / 2, dark grey 1 / 3. In pass 1 the value 1 changes nothing, 0 adds black, 2 and 3 add two grey levels (tried only over white). Black needs pass 1; the single-pass code 3 is the dark red.
+
+Measured on one tag from raw phone photos in daylight, relative to the panel white (luminance Y and red / green ratio of the linear values; the panel white is about 0.50 of white paper): black block 0.23 (R/G 1.07, neutral), black bar next to white 0.30; dark red 0.28 to 0.32 (R/G 1.6); yellow 0.73 (R/G 1.4); grey 0.65 and dark grey 0.36 (neutral); orange (panel code 0) 0.4 (R/G 1.7, brown-orange). Black and dark red are nearly equally light; the panel's contrast, white to black, is about 4.5 : 1. A phone photo gives relative values only (no calibrated instrument); other panel lots and temperatures may differ.
 
 ## 8. Picture format
 
@@ -153,8 +165,8 @@ A frame is **480 lines of 44 bytes**: 176 pixels, **2 bits per pixel, four pixel
 
 * Current consumption in any mode; the battery chemistry (inferred only); the battery voltage thresholds of this cell.
 * Contents and purpose of the panel's own 6144-byte data block (read with `CMD 92`); it is not needed for drawing.
-* How the panel's colours behave over temperature (no calibration yet; a palette measurement is planned).
-* The two-pass drive (long and short record) and partial refresh.
+* How the panel's colours behave over temperature: drawing the four colour bands with the records of ranges 4, 5, 6 and 7 at 21 C looked the same to the eye; no measurements at other temperatures.
+* Partial refresh. The values of pass 1 over a colour other than white (only white was tried).
 * The behaviour on other panel lots than the one we have.
 
 Corrections are welcome: open an issue with what you measured and how.

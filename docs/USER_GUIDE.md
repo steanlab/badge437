@@ -1,6 +1,6 @@
-# n437 firmware 0.9a: user guide
+# n437 firmware 0.9d: user guide
 
-Repo path: `steanlab/badge437` (public) → `docs/USER_GUIDE.md`. Russian: `docs/USER_GUIDE.ru.md`. Firmware: `firmware/n437_0.9a.bin`. Page: <https://steanlab.github.io/badge437/>.
+Repo path: `steanlab/badge437` (public) → `docs/USER_GUIDE.md`. Russian: `docs/USER_GUIDE.ru.md`. Firmware: `firmware/n437_0.9d.bin`. Page: <https://steanlab.github.io/badge437/>.
 
 Unofficial project. Flashing replaces the original firmware of the tag; do it only if you accept that, at your own risk. Tested on one tag.
 
@@ -18,14 +18,14 @@ Unofficial project. Flashing replaces the original firmware of the tag; do it on
 3. Dry run (backup and plan only, nothing is written):
 
    ```
-   python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9a.bin --no-questions --seconds 5
+   python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9d.bin --no-questions --seconds 5
    ```
 
    It must end with `plan_verified` and no error. It refuses a tag whose flash protection status is not `2C`, or whose factory record it does not recognise: then stop and ask.
 4. Flash:
 
    ```
-   python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9a.bin --apply --no-questions --seconds 5
+   python3 nebular_debug_custom.py --model 437 --custom-firmware n437_0.9d.bin --apply --no-questions --seconds 5
    ```
 
    It must end with `whole_flash_verified` and `protection_restored`. Only the application zone (the first 128 KiB of the flash) is written; the factory data stays untouched.
@@ -40,16 +40,16 @@ The tag starts in **standalone mode**: Bluetooth is on **only for 120 s after po
 
 1. Open <https://steanlab.github.io/badge437/> in Chrome / Edge, press "Connect" (the language button switches English / Russian), choose the device `OD-xxxx`.
 2. When linked the LED flashes green (a dim green flash every 5 s while linked). The slot card lists the slots and the free space.
-3. **Set the orientation (once, necessary in 0.9a):** card "Panel", orientation = *mirrored horizontally*, "Apply". It is stored. (Or send `4D 02 17 27` in the developer card.) The colour table field stays `27`.
+3. **Check the orientation:** card "Panel", orientation = *mirrored horizontally* (the default of 0.9d). If your tag stored another value (flashed with 0.9a and never set) pictures come out mirrored: choose it and press "Apply"; it is stored. (Or send `4D 02 17 27` in the developer card.) The colour table field stays `27`.
 4. When the window ends the LED flashes red once and the tag goes to sleep. To open a window again: touch the tag with the phone (NFC, 60 s) or cut and restore the power (120 s).
 
 ## 3. Put a picture on the tag
 
 Card "New picture":
 
-1. Choose an image file; it is fitted to 176 x 480 pixels (portrait in the preview; use the rotation if your picture is landscape). Options: fill (crop) / whole (white margins) / stretch, rotation, **dithering** (Floyd-Steinberg for photos, Atkinson for drawings and text, ordered, none), brightness and contrast. The preview shows the four panel colours.
+1. Choose an image file; it is fitted to 176 x 480 pixels (portrait in the preview; use the rotation if your picture is landscape). Options: fill (crop) / whole (white margins) / stretch, rotation, **dithering** (Floyd-Steinberg for photos, Atkinson for drawings and text, ordered, none), brightness and contrast, and **colours**: 4 (white, black, dark red, yellow) or 7 (adds orange and two greys; needs firmware 0.9d; the picture is stored as two planes, 20 to 40 KB, so fewer fit). The preview shows ideal colours; the panel itself is paler and flatter (black is a dark grey, dark red nearly as dark as black).
 2. Choose the slot (0 to 23) and press "Upload". The page tries three storage formats and sends the smallest. A progress bar shows it; keep the page open and stay near the tag.
-3. The slot list updates; in the list use **show** (draw this slot now, about 20 seconds, the panel flashes during the refresh), **verify** (read it back and check the CRC) and **erase**. "Erase all slots" empties every slot.
+3. The slot list updates; in the list use **show** (draw this slot now, 20 to 25 seconds (two passes), the panel flashes during the refresh), **verify** (read it back and check the CRC) and **erase**. "Erase all slots" empties every slot.
 
 A picture that is already drawn stays on the panel without power (e-paper). The panel shows what was drawn last; there is no live preview.
 
@@ -115,7 +115,7 @@ Uploads are refused while a trial is open (the first seconds after a switch).
 | The tag does not show up in the device list | The window is closed (no blue flash every 5 s). Touch the tag with the phone or cut and restore the power. The tag must be within a few metres |
 | The log says "Web Bluetooth is not available in this browser" | use Chrome or Edge, not Firefox / Safari / iOS |
 | Pictures are mirrored | set the orientation (section 2, step 3) |
-| Colours look dark / muddy | normal for 0.9a: the colours are not calibrated; red and black are darker than the preview, and the panel works best in daylight; try Atkinson or less contrast |
+| Colours look pale / flat | normal: the panel's black is about 4.5 : 1 against its white and the dark red is nearly as dark as black; mid-tones come out lighter than the original. The panel looks best in daylight; try Atkinson or a little more contrast |
 | Panel shows a ghost of the previous picture | use the clean-up draw (`4A ... 01 02`), or draw twice |
 | "no room" on upload | free sectors are not contiguous; erase a slot (`40` in the developer card shows used slots, free sectors and the largest free run) |
 | The link drops during the refresh | normal with some phones; reconnect. The OpenDisplay tool reconnects by itself |
