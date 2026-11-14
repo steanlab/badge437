@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the waveform block of a Hanshow Nebular Pro 437Q-N in a full flash backup (512 KiB).
+"""Check the waveform block of a Telink TLSR8258 4.37" e-paper tag in a full flash backup (512 KiB).
 
 Repo path: steanlab/badge437 (public) -> tools/check_waveform.py.  Licence: see ../LICENSE.md.
 

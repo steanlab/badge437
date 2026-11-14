@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Check the factory record of a Nebular 437Q-N flash backup.
+"""Check the factory record of a 4.37" tag flash backup.
 
 Usage:  python3 tools/check_factory_record.py nebular-debug-*/before-1.bin
 
 Read-only. The record (92 bytes at flash address 0x7E000) is the same on every tag of a variant;
 it holds no serial number or address, so printing differing bytes is safe.
-Exit code: 0 = a 437Q-N record (known or a new variant), 1 = not a 437Q-N record, 2 = unusable file.
+Exit code: 0 = a 437 record (known or a new variant), 1 = not a 437 record, 2 = unusable file.
 Covered by the licence of this repository (steanlab/badge437)."""
 import sys
 
@@ -39,7 +39,7 @@ def main():
         print("factory record: revision A (known). The stock script accepts it.")
         return 0
     if is_437(rec):
-        print("factory record: a 437Q-N record that the stock script refuses.")
+        print("factory record: a 437 record that the stock script refuses.")
         if rec == B:
             print("It is revision B (known): bytes +00, +01 and +46 differ from A; flashes and draws normally.")
         else:
@@ -51,9 +51,9 @@ def main():
         print("Next step: python3 tools/make_tolerant_script.py tools/nebular_debug_custom.py")
         print("and use the new tools/nebular_debug_tolerant.py in place of nebular_debug_custom.py.")
         return 0
-    print("factory record: NOT a 437Q-N record (panel size, diagonal or model code differ).")
+    print("factory record: NOT a 437 record (panel size, diagonal or model code differ).")
     print("Do not flash. Open an issue and paste this output.")
-    print("  size/diagonal at +0x12..+0x17: %s   model code at +0x2F: %02x (437Q-N: 2b)"
+    print("  size/diagonal at +0x12..+0x17: %s   model code at +0x2F: %02x (437 tag: 2b)"
           % (rec[0x12:0x18].hex(" "), rec[0x2F]))
     return 1
 

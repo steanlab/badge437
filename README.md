@@ -2,7 +2,7 @@
 
 Repo path: `steanlab/badge437` (public).
 
-Own firmware and a web control page for the **Hanshow Nebular Pro 437Q-N**: a 4.37" electronic shelf label with a 480 x 176 pixel black / white / red / yellow e-paper panel, a Telink TLSR8258 Bluetooth LE module, an RGB LED and an NFC chip. The firmware replaces the original one and turns the tag into a small picture frame / badge that you control from a phone or a PC.
+Own firmware and a web control page for a **4.37" electronic shelf label on a Telink TLSR8258**: a tag with a 480 x 176 pixel black / white / red / yellow e-paper panel, a Telink TLSR8258 Bluetooth LE module, an RGB LED and an NFC chip. The firmware replaces the original one and turns the tag into a small picture frame / badge that you control from a phone or a PC.
 
 **Release 0.9j (14 November 2026)**: [`firmware/n437_0.9j.bin`](firmware/n437_0.9j.bin) (0.9f, 0.9e, 0.9d and 0.9a stay in the same folder; **update from 0.9f or older if you use a long slideshow interval**, see the notes), notes in [`firmware/RELEASE_NOTES.md`](firmware/RELEASE_NOTES.md). Control page: <https://steanlab.github.io/badge437/> (Chrome or Edge, Android or desktop; Web Bluetooth).
 
@@ -10,7 +10,7 @@ Unofficial: not affiliated with Hanshow, Telink, OpenDisplay or OpenEPaperLink. 
 
 ## Read this first: two stages
 
-A tag comes with the original Hanshow firmware, and **it cannot be updated over Bluetooth or from the page**. Our firmware gets onto the tag in two stages:
+A tag comes with the original firmware, and **it cannot be updated over Bluetooth or from the page**. Our firmware gets onto the tag in two stages:
 
 | Stage | How | When |
 |---|---|---|

@@ -1,10 +1,10 @@
-# Hanshow Nebular Pro 437Q-N: hardware reference for firmware authors
+# 4.37" Telink TLSR8258 e-paper tag: hardware reference for firmware authors
 
 Repo path: `steanlab/badge437` (public) → `docs/HARDWARE.md`. Companion: `docs/PROTOCOL.md` (the commands and formats of our firmware). Date: 12 November 2026.
 
 This is what was found out while writing the firmware, written for someone who wants to write their own. **Every fact has a label:**
 
-* **[verified]**: checked by our own firmware running on a 437Q-N (one tag, powered from the programmer);
+* **[verified]**: checked by our own firmware running on a 437 tag (one tag, powered from the programmer);
 * **[photo]**: read from the markings and photographs of the board;
 * **[data]**: read from the data of the tags we have (flash backups of three tags);
 * **[assumed]**: taken from the sister tags (154QN, 970Q-N), not checked here.
@@ -15,19 +15,19 @@ What is deliberately **not** in this document: contents of any flash backup, the
 
 | Item | Value |
 |---|---|
-| Product | Hanshow Nebular Pro 437Q-N, a 4.37" electronic shelf label [photo] |
+| Product | a 4.37" electronic shelf label with a Telink TLSR8258 module, board marking `HSEL4Q_04_37M_32` [photo] |
 | Board marking | `HSEL4Q_04_37M_32`, date code `YW2403` [photo] |
 | MCU module | marking `HS9118`, **Telink TLSR8258** (TC32 core, 2.4 GHz BLE), 24 MHz system clock, **512 KiB internal flash** (JEDEC id `EB 60 13` as the programmer script knows it) [photo][verified] |
 | Panel | 4.37" e-paper, **480 x 176 pixels**, four colours black / white / red / yellow, controller family marked `S437` in the factory data; 26-pin FPC marked `P437040-MF1-A-M`; the panel scans 176 columns by 480 rows [photo][data] |
 | LED | one RGB LED [verified] |
 | NFC | FM11NT083V-class chip, I2C, NFC Forum Type 2 memory, antenna loop around the board edge [verified] |
-| Battery | pouch cell marked `CF332544 750mAh Hanshow 3.0V`; the prefix and rating point to a **non-rechargeable lithium (Li-CFx) cell**: not confirmed, treat it as not rechargeable and never charge it [photo][assumed] |
+| Battery | pouch cell marked `CF332544 750mAh 3.0V`; the prefix and rating point to a **non-rechargeable lithium (Li-CFx) cell**: not confirmed, treat it as not rechargeable and never charge it [photo][assumed] |
 | Debug / programming pads (MCU side) | `NRST TX RX SWS VCC GND`, plus battery `+` / `-` [photo] |
 | Panel test pads (connector side) | labelled with the panel signals: `GDR VSH2 RST CS SDA VDD VGH VGL` and `RESE BUSY DC CK VBAT VSH1 VSL VCOM`; the SPI-like lines can be watched with a logic analyser without soldering to the FPC [photo] |
 
 ## 2. Programming, backup and flash protection
 
-* The programming interface is the Telink single-wire **SWS** (pads `NRST`, `TX`, `RX`, `SWS`, `VCC`, `GND` in one row on the MCU side; `TX` / `RX` are not needed for flashing). The Hanshow RP2040 bridge (Gerard780, v1.6) with the flasher [`tools/nebular_debug_custom.py`](../tools/README.md) (`--model 437`) worked on Ubuntu with a Raspberry Pi Pico build [verified]; wiring and pad photo in [USER_GUIDE.md](USER_GUIDE.md) section 0. The programmer's 3.3 V powers the tag; no battery is needed [verified].
+* The programming interface is the Telink single-wire **SWS** (pads `NRST`, `TX`, `RX`, `SWS`, `VCC`, `GND` in one row on the MCU side; `TX` / `RX` are not needed for flashing). The RP2040 bridge (Gerard780, v1.6) with the flasher [`tools/nebular_debug_custom.py`](../tools/README.md) (`--model 437`) worked on Ubuntu with a Raspberry Pi Pico build [verified]; wiring and pad photo in [USER_GUIDE.md](USER_GUIDE.md) section 0. The programmer's 3.3 V powers the tag; no battery is needed [verified].
 * **Back up the whole 512 KiB first.** The script does it automatically before any write. The backup is the only copy of your tag's factory data. Treat it as private.
 * **Flash block protection.** The stock firmware leaves the chip's block protection set: status register value `0x2C` (high byte `00`), so erase and write in the upper half of the flash do nothing until the protection is cleared. The programmer clears it for the time of the write and restores it. Our firmware does the same from the tag's own code: it writes the **16-bit status register** (mask `0x407C`) only if the status reads exactly `2C 00` or `2C 38`, and puts the original value back after every erase / write [verified]. If your firmware leaves the protection cleared, the programmer script will refuse the tag next time (it only accepts `2C`); restore it.
 * **Code that runs while the flash is busy must be in RAM.** A status-register write makes the flash chip busy, and instruction fetch from the same flash then fails: the MCU hangs until the watchdog resets it. The status write and the wait for its end must execute from RAM [verified: this was a real bug, 0.3 hung on it].
@@ -71,9 +71,9 @@ Addresses are flash addresses; the Telink boot ROM starts from address 0. The st
 
 Rules our firmware follows, and you should too: write only inside a window that you define (ours: `0x40000`..`0x76FFF`, plus the idle image area during an OTA upload); everything else is dropped. The SDK has two writers of its own (the OTA timeout and the pairing store): point the pairing store (`CFG_ADR_PEER`) at an unused sector, or switch pairing off.
 
-**Factory record (`0x7E000`).** It identifies the model: the panel geometry as two 16-bit values (`176` and `480`) at offsets `+0x12` and `+0x14` and the **model code `0x2B`** at `+0x2F` identify a 437Q-N. Read it to refuse other tags; do not write it.
+**Factory record (`0x7E000`).** It identifies the model: the panel geometry as two 16-bit values (`176` and `480`) at offsets `+0x12` and `+0x14` and the **model code `0x2B`** at `+0x2F` identify a 437 tag. Read it to refuse other tags; do not write it.
 
-**Record revisions seen [5 tags].** The 92 bytes are identical on every tag of a variant (no serial number in them). Revision A (4 tags): the record the stock flasher accepts. **Revision B (1 tag): bytes `+0x00`, `+0x01` and `+0x2E` differ** (`61 D7` / `0A` in A, `9C 2F` / `03` in B); the panel size, the diagonal and the model code are the same. The first two bytes look like a checksum of the rest (we did not find the formula), the meaning of `+0x2E` is unknown. The waveform block of the revision B tag is intact and has a different CRC than the revision A tags, so a different panel lot is possible. **Our firmware does not read this record: the revision B tag was flashed with 0.9f and draws exactly like the others.** The stock flasher compares the record byte for byte and refuses B; [`tools/check_factory_record.py`](../tools/check_factory_record.py) tells the variant and [`tools/make_tolerant_script.py`](../tools/make_tolerant_script.py) makes a local copy of the flasher that accepts any record saying 437Q-N (size, diagonal and model code as above).
+**Record revisions seen [5 tags].** The 92 bytes are identical on every tag of a variant (no serial number in them). Revision A (4 tags): the record the stock flasher accepts. **Revision B (1 tag): bytes `+0x00`, `+0x01` and `+0x2E` differ** (`61 D7` / `0A` in A, `9C 2F` / `03` in B); the panel size, the diagonal and the model code are the same. The first two bytes look like a checksum of the rest (we did not find the formula), the meaning of `+0x2E` is unknown. The waveform block of the revision B tag is intact and has a different CRC than the revision A tags, so a different panel lot is possible. **Our firmware does not read this record: the revision B tag was flashed with 0.9f and draws exactly like the others.** The stock flasher compares the record byte for byte and refuses B; [`tools/check_factory_record.py`](../tools/check_factory_record.py) tells the variant and [`tools/make_tolerant_script.py`](../tools/make_tolerant_script.py) makes a local copy of the flasher that accepts any record saying 437 tag (size, diagonal and model code as above).
 
 ## 5. The panel waveform block (`0x78000`)
 

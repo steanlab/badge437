@@ -1,7 +1,7 @@
 {
   "name": "badge437 console",
   "short_name": "badge437",
-  "description": "Console for the Hanshow Nebular Pro 437Q-N e-paper tag: slides over Bluetooth",
+  "description": "Console for a 4.37-inch Telink TLSR8258 e-paper tag: slides over Bluetooth",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

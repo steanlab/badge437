@@ -8,7 +8,7 @@ Unofficial project. Flashing replaces the original firmware of the tag; do it on
 
 ## 0. What you need
 
-* **The tag:** Hanshow Nebular Pro 437Q-N (4.37", 176 x 480 four-colour). The marking `HSEL4Q_04_37M_32` is on the board; a different Nebular model has another panel and other pins, this firmware is for the 437Q-N only.
+* **The tag:** Telink TLSR8258 4.37" e-paper tag (4.37", 176 x 480 four-colour). The marking `HSEL4Q_04_37M_32` is on the board; a different model of the series has another panel and other pins, this firmware is for the 437 tag only.
 * **A tag whose panel data is intact.** The tag keeps the drive data of its panel in its flash (the "waveform block"). Firmware that was on the tag before can have damaged it (we saw it on 2 of 4 tags that had run ATC_BLE_OEPL-based builds). Section 1 has a check; a damaged tag cannot draw until it is repaired.
 * **A programmer** that talks to the Telink single-wire debug interface (SWS) of the tag. Here it is the open **RP2040 bridge by Gerard780** ([github.com/gerard780/hanshow-rp2040-programmer](https://github.com/gerard780/hanshow-rp2040-programmer), MIT licence): a small RP2040 board with the bridge firmware **v1.6**, one **1 kOhm resistor** and five short wires.
   * Recommended board: **Waveshare RP2040-Zero**, with the ready firmware `dist/hanshow_pio_bridge.uf2` from that repository (SHA-256 `55a226a09190eaf8bae327b0671f9c1d1d261f7001a51e233e2f23a95c454a51`). To install it: hold the BOOT button while plugging in USB, copy the file to the drive `RPI-RP2`. This flashes the **programmer**, not the tag.
@@ -20,9 +20,9 @@ Unofficial project. Flashing replaces the original firmware of the tag; do it on
 
 ### Where the wires go
 
-The programming pads are in one row on the MCU side of the board (the side with the `Hanshow HS9118` module), at the top edge, left to right: `NRST  TX  RX  SWS  VCC  GND`. `TX` and `RX` are not needed for flashing.
+The programming pads are in one row on the MCU side of the board (the side with the `HS9118` module), at the top edge, left to right: `NRST  TX  RX  SWS  VCC  GND`. `TX` and `RX` are not needed for flashing.
 
-![Pads of the Nebular Pro 437Q-N and the programmer wires](img/board_pads.jpg)
+![Pads of the 4.37" tag and the programmer wires](img/board_pads.jpg)
 
 | RP2040-Zero (use the printed GPIO numbers, not Pico header pins) | Tag pad |
 |---|---|
@@ -42,7 +42,7 @@ These are the numbers of the ready UF2. If you build the bridge firmware yoursel
 
 1. **Keep the original.** The software reads the whole flash of the tag before it writes anything and stores it as a backup file. **Keep that file**: it holds the factory data of your panel (the waveform data the firmware needs, see [HARDWARE.md](HARDWARE.md)), the radio calibration and the factory record of your tag. Never publish it (it contains your tag's address). Read the flash twice and compare the copies if you like.
 2. Wire as in section 0, then plug the programmer's USB into the computer.
-3. **Software.** The flasher is [`tools/nebular_debug_custom.py`](../tools/nebular_debug_custom.py) by Gerard780 (the author of the bridge), included unchanged, see [`tools/README.md`](../tools/README.md). It already knows the 437Q-N (flash id `EB 60 13`, factory record at `0x7E000`, application zone `0x00000`..`0x1FFFF`), refuses to write if the factory record is not the expected one, writes only the changed sectors of the application zone and puts back the flash protection. Needs Python 3.9 or newer; on Ubuntu (the author used Python 3.12.3):
+3. **Software.** The flasher is [`tools/nebular_debug_custom.py`](../tools/nebular_debug_custom.py) by Gerard780 (the author of the bridge), included unchanged, see [`tools/README.md`](../tools/README.md). It already knows the 437 tag (flash id `EB 60 13`, factory record at `0x7E000`, application zone `0x00000`..`0x1FFFF`), refuses to write if the factory record is not the expected one, writes only the changed sectors of the application zone and puts back the flash protection. Needs Python 3.9 or newer; on Ubuntu (the author used Python 3.12.3):
 
    ```
    python3 -m venv .venv
@@ -70,21 +70,21 @@ These are the numbers of the ready UF2. If you build the bridge firmware yoursel
 
    It must say `waveform block OK`. If it says `BAD`, **do not flash**: see section 8, "Damaged waveform block". It refuses a tag whose flash protection status is not `2C`, or whose factory record it does not recognise: then stop and read the next paragraph.
 
-   **If the dry run stops with `Factory record does not match this 437Q-N revision; no writes`:** nothing was written to the tag (the backup was made). A few 437Q-N tags have a slightly different factory record than the one the script knows; the firmware of this project does not use that record, and such a tag flashes and draws like any other (tested on one). Check what your record says:
+   **If the dry run stops with `Factory record does not match this 437Q-N revision; no writes`:** nothing was written to the tag (the backup was made). A few 437 tags have a slightly different factory record than the one the script knows; the firmware of this project does not use that record, and such a tag flashes and draws like any other (tested on one). Check what your record says:
 
    ```
    python3 tools/check_factory_record.py nebular-debug-*/before-1.bin
    ```
 
-   * **"a 437Q-N record that the stock script refuses"**: make a local copy of the script that accepts it and use that copy in **both** commands (dry run and flash) in place of `tools/nebular_debug_custom.py`:
+   * **"a 437 record that the stock script refuses"**: make a local copy of the script that accepts it and use that copy in **both** commands (dry run and flash) in place of `tools/nebular_debug_custom.py`:
 
      ```
      python3 tools/make_tolerant_script.py tools/nebular_debug_custom.py
      python3 tools/nebular_debug_tolerant.py --model 437 --custom-firmware firmware/n437_0.9j.bin --no-questions --seconds 5
      ```
 
-     The copy accepts the known record or any record that says 437Q-N (panel 176 x 480, model code `2B`); every other safety check of the script stays. If the check printed a **new variant**, please open an issue with its output so that it can be listed. Check the waveform block with `check_waveform.py` as above before the flash.
-   * **"NOT a 437Q-N record"**: **do not flash.** It is another model or damaged; open an issue and paste the output (it contains no serial number or address).
+     The copy accepts the known record or any record that says 437 tag (panel 176 x 480, model code `2B`); every other safety check of the script stays. If the check printed a **new variant**, please open an issue with its output so that it can be listed. Check the waveform block with `check_waveform.py` as above before the flash.
+   * **"NOT a 437 record"**: **do not flash.** It is another model or damaged; open an issue and paste the output (it contains no serial number or address).
 
 5. **Flash:**
 
@@ -192,7 +192,7 @@ Uploads are refused while a trial is open (the first seconds after a switch).
 | "no room" on upload | free sectors are not contiguous; erase a slot (`40` in the developer card shows used slots, free sectors and the largest free run) |
 | The link drops during the refresh | normal with some phones; reconnect. The OpenDisplay tool reconnects by itself |
 | Damaged waveform block: the log says `waveform block CRC bad ... not drawing`, `STATUS` ends with `wf=0`, the page shows a red notice, `check_waveform.py` says BAD | The panel data in the tag's flash (`0x78000`..`0x7AFFF`) was damaged, usually by firmware that was on the tag before. Pictures can be uploaded but not shown. Not repairable from the page: it needs the programmer and an intact copy of the same block from a tag with the same panel data version (in the cases we saw only the sector `0x79000` was damaged). Keep the backup, do not post dumps, and ask in the Issues |
-| The dry run ends with `Factory record does not match this 437Q-N revision; no writes` | The script does not know the factory record of your tag. Nothing was written. Run `tools/check_factory_record.py` on the backup and follow section 1 (a 437Q-N record: `tools/make_tolerant_script.py`; not a 437Q-N record: do not flash, open an issue) |
+| The dry run ends with `Factory record does not match this 437Q-N revision; no writes` | The script does not know the factory record of your tag. Nothing was written. Run `tools/check_factory_record.py` on the backup and follow section 1 (a 437 record: `tools/make_tolerant_script.py`; not a 437 record: do not flash, open an issue) |
 | Nothing at all after flashing | check that the dry run said `plan_verified` and the flash `whole_flash_verified`; check the wires; try the power cycle; restore the backup if needed |
 | The tag restarts every 15 s | the watchdog is biting: report it with the full log of the page ("Save to file") |
 

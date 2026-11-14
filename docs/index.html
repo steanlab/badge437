@@ -5,6 +5,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>badge437 — консоль</title>
+<meta name="description" content="badge437: own firmware and a web console for a 4.37-inch e-paper tag with a Telink TLSR8258. Upload pictures over Bluetooth from Chrome, 8 colours, slideshow, NFC tap, firmware update over the air.">
+<link rel="canonical" href="https://steanlab.github.io/badge437/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="badge437">
+<meta property="og:title" content="badge437: firmware and web console for a 4.37-inch e-paper tag">
+<meta property="og:description" content="Pictures over Bluetooth from the browser, 8 colours, slideshow, NFC tap, OTA update. Telink TLSR8258.">
+<meta property="og:url" content="https://steanlab.github.io/badge437/">
+<meta property="og:image" content="https://steanlab.github.io/badge437/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A 4.37-inch e-paper tag showing a colour picture with the text BADGE 437">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="badge437: firmware and web console for a 4.37-inch e-paper tag">
+<meta name="twitter:description" content="Pictures over Bluetooth from the browser, 8 colours, slideshow, NFC tap, OTA update.">
+<meta name="twitter:image" content="https://steanlab.github.io/badge437/og.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" href="icon-192.png">
@@ -49,7 +64,7 @@ details.card[open]>summary{margin-bottom:8px}
 </head>
 <body>
 <main>
-<h1>badge437 — консоль метки Hanshow Nebular Pro 437Q-N</h1>
+<h1>badge437 — консоль метки e-paper 4,37" на Telink TLSR8258</h1>
 
 <div class="card">
   <div class="row">
@@ -166,7 +181,7 @@ details.card[open]>summary{margin-bottom:8px}
 </main>
 <script>
 /* ================= LZ codec (the firmware decodes this) ================= */
-/* LZ4 block encoder / decoder for the 437Q-N slot formats (offsets <= 2048), and the line XOR filter. Plain functions, no dependencies. */
+/* LZ4 block encoder / decoder for the 437 tag slot formats (offsets <= 2048), and the line XOR filter. Plain functions, no dependencies. */
 const LZ_WIN = 2048;
 
 function lzEncode(src, depth){
@@ -393,7 +408,7 @@ const sectorsFor = len => Math.ceil((256 + len) / 4096);
 /* ================= languages: Russian is the source text, English is looked up here ================= */
 const EN = {
   "badge437 — консоль": "badge437 console",
-  "badge437 — консоль метки Hanshow Nebular Pro 437Q-N": "badge437: console for the Hanshow Nebular Pro 437Q-N tag",
+  "badge437 — консоль метки e-paper 4,37" на Telink TLSR8258": "badge437: console for the 4.37\" e-paper tag on a Telink TLSR8258",
   "Подключиться": "Connect",
   "Отключиться": "Disconnect",
   "показать все устройства": "show all devices",

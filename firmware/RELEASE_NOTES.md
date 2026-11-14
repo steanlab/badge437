@@ -7,7 +7,7 @@ Repo path: `steanlab/badge437` (public) → `firmware/RELEASE_NOTES.md`. Release
 | File | `firmware/n437_0.9j.bin` (103224 bytes) |
 | SHA-256 | `2034043e63bcc7e20d4ed55304df0412788664c2c50300fbbad2f88cde2fb4d6` (also in `firmware/SHA256SUMS.txt`; check with `sha256sum -c SHA256SUMS.txt`) |
 | Version string | `437-0.9j` (boot line `N437 fw 437-0.9j`) |
-| Target | Hanshow Nebular Pro 437Q-N (Telink TLSR8258, 512 KiB flash, 4.37" 176 x 480 black / white / red / yellow panel) |
+| Target | Telink TLSR8258 4.37" e-paper tag (Telink TLSR8258, 512 KiB flash, 4.37" 176 x 480 black / white / red / yellow panel) |
 | Install | with the programmer the first time ([user guide](../docs/USER_GUIDE.md)), later over Bluetooth (OTA) from 0.9 or later; the memory layout is unchanged, pictures and settings are kept |
 | Page | <https://steanlab.github.io/badge437/> |
 
