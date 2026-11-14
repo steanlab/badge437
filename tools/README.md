@@ -23,3 +23,7 @@ Reads the factory record (92 bytes at `0x7E000`) of a full flash backup and says
 ## `make_tolerant_script.py`
 
 Writes `tools/nebular_debug_tolerant.py`, a local copy of `nebular_debug_custom.py` whose factory-record check also accepts any record that says 437 tag (panel 176 x 480, diagonal 437, model code `2B`); one check changed, everything else untouched, the original file is not modified, `--model 970` is unaffected. Use it after `check_factory_record.py`, in place of the original in the dry run and the flash. Do not redistribute the copy (the original is Gerard780's work). Covered by the licence of this repository.
+
+## `make_donor_script.py`
+
+Writes `tools/nebular_debug_donor.py`, a local copy of the flasher (the original or the tolerant copy) with two additions: it accepts the flash chip id `681013` (some tags have a different flash chip than `eb6013`; the copy prints the id it read) and, when the environment variable `WF_DONOR` names a good full backup of **another** 437 tag, it writes that tag's panel-data block (`0x78000`..`0x7AFFF`) together with the firmware. Use it for a tag whose block is damaged (`docs/USER_GUIDE.md` section 8). Dry run first, then `--apply`; the original is not modified. Do not redistribute the copy. Covered by the licence of this repository.

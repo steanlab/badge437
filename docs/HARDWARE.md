@@ -135,3 +135,5 @@ A frame is **480 lines of 44 bytes**: 176 pixels, **2 bits per pixel, four pixel
 * The behaviour on other panel lots than the one we have.
 
 Corrections are welcome: open an issue with what you measured and how.
+
+**Flash chip variant [1 tag].** One tag identified itself as JEDEC `681013` (manufacturer byte `68`) instead of `eb6013`; the stock flasher stops with `Flash does not match --model 437: read 681013`. Reads were stable (the same full backup 9 times, one read in about 20 differed, so the flasher's two-backup rule must stay), the protection status was `2C` as on the others and the tag could be written (`tools/make_donor_script.py` accepts the id). That tag had a damaged waveform block (it had been flashed with the ATC web flasher): its stored CRC matched none of the other tags' blocks, 40-60 % of the bytes differed from every donor block, and writing a donor block from a good tag made it draw again [1 tag].
