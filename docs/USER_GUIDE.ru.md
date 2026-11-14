@@ -1,6 +1,6 @@
-# Прошивка n437 0.9j: инструкция пользователя
+# Прошивка n437 0.9k: инструкция пользователя
 
-Путь в репозитории: `steanlab/badge437` (публичный) → `docs/USER_GUIDE.ru.md`. English: `docs/USER_GUIDE.md`. Прошивка: `firmware/n437_0.9j.bin`. Страница: <https://steanlab.github.io/badge437/>.
+Путь в репозитории: `steanlab/badge437` (публичный) → `docs/USER_GUIDE.ru.md`. English: `docs/USER_GUIDE.md`. Прошивка: `firmware/n437_0.9k.bin`. Страница: <https://steanlab.github.io/badge437/>.
 
 Неофициальный проект. Прошивка заменяет оригинальную прошивку метки; делайте это, только если согласны с этим, на свой риск. Проверено на одной метке.
 
@@ -59,7 +59,7 @@
    Мост должен быть в списке. Затем **пробный прогон** (только копия и план, ничего не пишется):
 
    ```
-   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9j.bin --no-questions --seconds 5
+   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9k.bin --no-questions --seconds 5
    ```
 
    Должно закончиться `plan_verified` без ошибок. **Затем проверьте копию, которую он сделал** (файл `before-1.bin` в новой папке `nebular-debug-<дата>`):
@@ -80,7 +80,7 @@
 
      ```
      python3 tools/make_tolerant_script.py tools/nebular_debug_custom.py
-     python3 tools/nebular_debug_tolerant.py --model 437 --custom-firmware firmware/n437_0.9j.bin --no-questions --seconds 5
+     python3 tools/nebular_debug_tolerant.py --model 437 --custom-firmware firmware/n437_0.9k.bin --no-questions --seconds 5
      ```
 
      Копия принимает известную запись или любую, где написано 437 (панель 176 x 480, код модели `2B`); все остальные проверки скрипта остаются. Если проверка написала **new variant**, откройте issue с её выводом, чтобы вариант внесли в список. Блок формы сигнала проверьте `check_waveform.py`, как выше, до прошивки.
@@ -89,7 +89,7 @@
 5. **Прошивка:**
 
    ```
-   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9j.bin --apply --no-questions --seconds 5
+   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9k.bin --apply --no-questions --seconds 5
    ```
 
    Должно закончиться `whole_flash_verified` и `protection_restored`. Пишется только зона приложения (первые 128 КиБ флеш-памяти), заводские данные не трогаются.

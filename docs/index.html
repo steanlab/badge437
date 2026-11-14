@@ -537,8 +537,8 @@ const EN = {
   "Читаю версию прошивки…": "Reading the firmware version…",
   "Блок формы сигнала в метке повреждён (контрольная сумма не сходится): метка не сможет рисовать. Картинки загрузить можно, показать нельзя. Нужен ремонт программатором, см. руководство, раздел 8.": "The waveform block in the tag is damaged (checksum mismatch): the tag cannot draw. You can upload pictures but not show them. It needs a repair with the programmer, see the user guide, section 8.",
   "Прошивка {0}: актуальная.": "Firmware {0}: up to date.",
-  "Прошивка {0}: старше 0.8, обновление по Bluetooth в ней невозможно, перепрошейте программатором (файл firmware/n437_0.9j.bin).": "Firmware {0}: older than 0.8, it cannot be updated over Bluetooth; reflash it with the programmer (file firmware/n437_0.9j.bin).",
-  "Прошивка {0}: есть новее (0.9j). Скачайте firmware/n437_0.9j.bin из репозитория и загрузите в карточке «Обновление прошивки (OTA)».": "Firmware {0}: a newer one exists (0.9j). Download firmware/n437_0.9j.bin from the repository and upload it in the card \"Firmware update over Bluetooth (OTA)\".",
+  "Прошивка {0}: старше 0.8, обновление по Bluetooth в ней невозможно, перепрошейте программатором (файл firmware/n437_0.9k.bin).": "Firmware {0}: older than 0.8, it cannot be updated over Bluetooth; reflash it with the programmer (file firmware/n437_0.9k.bin).",
+  "Прошивка {0}: есть новее (0.9k). Скачайте firmware/n437_0.9k.bin из репозитория и загрузите в карточке «Обновление прошивки (OTA)».": "Firmware {0}: a newer one exists (0.9k). Download firmware/n437_0.9k.bin from the repository and upload it in the card \"Firmware update over Bluetooth (OTA)\".",
   "Открыть карточку OTA": "Open the OTA card",
   "Проверка ориентации (после подключения).": "Orientation check (after connecting).",
   "Читаю ориентацию…": "Reading the orientation…",
@@ -1138,7 +1138,7 @@ $("bName").onclick = () => {
 $("mSplash").onchange = () => send(Uint8Array.from([0x4F, 9, $("mSplash").checked ? 1 : 0]));
 
 /* ================= first-start wizard ================= */
-const WIZ_CUR = 100;		/* 0.9j */
+const WIZ_CUR = 101;		/* 0.9k */
 /* the newest released firmware: fw/latest.json beside the page (version, file, size, sha256) */
 let fwLatest = null;
 function verNum(v){ const m = /^437-(\d+)\.(\d+)([a-z]?)/.exec(v || ""); return m ? +m[1] * 1000 + +m[2] * 10 + (m[3] ? m[3].charCodeAt(0) - 96 : 0) : -1; }
@@ -1176,8 +1176,8 @@ function renderWiz(){
   const steps = [
     {ok: on, txt: T("Подключитесь к метке (кнопка «Подключиться»; метка должна быть в окне связи: после включения питания или касания телефоном)."), btn: on ? null : [T("Подключиться"), () => $("bConn").click()]},
     {ok: on && v >= WIZ_CUR, wait: on && v < 0, txt: !on ? T("Проверка прошивки (после подключения).") : v < 0 ? T("Читаю версию прошивки…") : v >= WIZ_CUR ? T("Прошивка {0}: актуальная.", fwInfo.ver)
-        : v < 80 ? T("Прошивка {0}: старше 0.8, обновление по Bluetooth в ней невозможно, перепрошейте программатором (файл firmware/n437_0.9j.bin).", fwInfo.ver)
-        : T("Прошивка {0}: есть новее (0.9j). Скачайте firmware/n437_0.9j.bin из репозитория и загрузите в карточке «Обновление прошивки (OTA)».", fwInfo.ver),
+        : v < 80 ? T("Прошивка {0}: старше 0.8, обновление по Bluetooth в ней невозможно, перепрошейте программатором (файл firmware/n437_0.9k.bin).", fwInfo.ver)
+        : T("Прошивка {0}: есть новее (0.9k). Скачайте firmware/n437_0.9k.bin из репозитория и загрузите в карточке «Обновление прошивки (OTA)».", fwInfo.ver),
      btn: (on && v >= 80 && v < WIZ_CUR) ? (fwLatest ? [T("Обновить"), () => $("bFwNew").click()] : [T("Открыть карточку OTA"), () => goTo("otaCard")]) : null},
     {ok: on && !!mirrored, wait: on && !odCfg, txt: !on ? T("Проверка ориентации (после подключения).") : !odCfg ? T("Читаю ориентацию…") : mirrored ? T("Ориентация: зеркально по горизонтали (как нужно для этой панели).") : T("Ориентация сейчас не «зеркально по горизонтали»: картинка может выйти зеркальной."),
      btn: (on && odCfg && !mirrored) ? [T("Поставить «зеркально»"), () => { send(Uint8Array.from([0x4D, 2, odCfg.slot, parseInt(odCfg.lut, 16) & 255])); setTimeout(() => send("4D"), 400); }] : null},

@@ -1,17 +1,22 @@
-# n437 firmware 0.9j: release notes
+# n437 firmware 0.9k: release notes
 
-Repo path: `steanlab/badge437` (public) → `firmware/RELEASE_NOTES.md`. Release date: 14 November 2026. The previous releases, 0.9f (`firmware/n437_0.9f.bin`), 0.9e, 0.9d and 0.9a, stay in the repository.
+Repo path: `steanlab/badge437` (public) → `firmware/RELEASE_NOTES.md`. Release date: 14 November 2026. The previous releases, 0.9j (`firmware/n437_0.9j.bin`), 0.9f, 0.9e, 0.9d and 0.9a, stay in the repository.
 
 | | |
 |---|---|
-| File | `firmware/n437_0.9j.bin` (103224 bytes) |
-| SHA-256 | `2034043e63bcc7e20d4ed55304df0412788664c2c50300fbbad2f88cde2fb4d6` (also in `firmware/SHA256SUMS.txt`; check with `sha256sum -c SHA256SUMS.txt`) |
-| Version string | `437-0.9j` (boot line `N437 fw 437-0.9j`) |
-| Target | Telink TLSR8258 4.37" e-paper tag (Telink TLSR8258, 512 KiB flash, 4.37" 176 x 480 black / white / red / yellow panel) |
+| File | `firmware/n437_0.9k.bin` (103440 bytes) |
+| SHA-256 | `c5ef90bbc62f3d56a2a4b19f09a9fa39a98fb69e05349a38195c288075e83254` (also in `firmware/SHA256SUMS.txt`; check with `sha256sum -c SHA256SUMS.txt`) |
+| Version string | `437-0.9k` (boot line `N437 fw 437-0.9k`) |
+| Target | 4.37" tag on a Telink TLSR8258 (512 KiB flash, 176 x 480 black / white / red / yellow panel) |
 | Install | with the programmer the first time ([user guide](../docs/USER_GUIDE.md)), later over Bluetooth (OTA) from 0.9 or later; the memory layout is unchanged, pictures and settings are kept |
-| Page | <https://steanlab.github.io/badge437/> |
+| Page | <https://steanlab.github.io/badge437/> (offers the update by itself when the tag runs an older version) |
 
-## What is new in 0.9j (fixes; update if the tag runs the slideshow by itself)
+## What is new in 0.9k
+
+* **The link is closed after 5 minutes of silence.** In the standalone mode a client that stays connected and sends no command used to keep the tag awake for ever (the window does not end while a link is up). Now the tag closes the link after 300 s without a write (log line `IDLE: no command for 300 s, link closed`); not during an upload or a pin test; OpenDisplay mode is not touched. The page also disconnects after 5 minutes without user action.
+* Tested on one tag by the owner (14 November 2026). Everything from 0.9j stays.
+
+## What is new in 0.9j (earlier release) (fixes; update if the tag runs the slideshow by itself)
 
 * **The tag did not go to sleep with a long slideshow interval.** 0.9f and earlier slept in pieces of up to 250 s. The wake-up time handed to the chip's sleep call is a 32-bit tick count; 250 s is further ahead than the chip's library accepts, so the sleep was **silently refused** and the tag stayed awake. Seen on tags with a battery and an interval of 1080 minutes: a slide change, then a weak blue flash every 5 s, red flashes, again and again, and a battery drained at the awake current. Pieces are now **120 s**. Found with a log of the uptime and the new `sr=` counter: the tag had not restarted in 21 minutes. (The limit is inferred from the behaviour: the library is closed.)
 * **The connectable window opened again after 268 s.** The "window is over" test compared a 32-bit timer difference that wraps every 268 s; a tag that stayed awake got a fresh window (blue flashes) every 4 min 28 s. The end of a window is now remembered.
@@ -93,7 +98,8 @@ Tested by the author on the **same one tag** (powered from the programmer, no ba
 | 0.9d | eight colours, two-plane slot formats, default orientation |
 | 0.9e | boot splash, slide order, no redraw of the same slide |
 | 0.9f | waveform block state in `STATUS` (`wf=`), notice on the page |
-| 0.9j | fixes: deep sleep pieces of 120 s (250 s was refused), end of the window remembered, `4F 0A`, complete `STATUS` (this release; 0.9g to 0.9i were test builds, not released) |
+| 0.9j | fixes: deep sleep pieces of 120 s (250 s was refused), end of the window remembered, `4F 0A`, complete `STATUS` (0.9g to 0.9i were test builds, not released) |
+| 0.9k | the link is closed after 300 s without a command (standalone mode) (this release) |
 
 ## Memory layout (data is not kept across layout changes)
 

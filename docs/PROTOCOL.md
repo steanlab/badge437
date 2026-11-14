@@ -1,6 +1,6 @@
-# n437 firmware 0.9j: Bluetooth commands and formats
+# n437 firmware 0.9k: Bluetooth commands and formats
 
-Repo path: `steanlab/badge437` (public) → `docs/PROTOCOL.md`. Companion: `docs/HARDWARE.md`. Firmware: `firmware/n437_0.9j.bin`. Date: 14 November 2026.
+Repo path: `steanlab/badge437` (public) → `docs/PROTOCOL.md`. Companion: `docs/HARDWARE.md`. Firmware: `firmware/n437_0.9k.bin`. Date: 14 November 2026.
 
 For people who write their own page or tool for this firmware, or their own firmware with the same formats. Most of it was exercised on a tag by the control page or the OpenDisplay tool; items marked *not tried* were not.
 
@@ -87,7 +87,7 @@ Messages start with `00` and a command byte; the replies are `status cmd data`.
 | Message | Answer |
 |---|---|
 | `00 40` | configuration: 176 x 480, four colours (black, white, red, yellow), rotation 0, no encryption; packets 1, 2, 4 and 32 are answered |
-| `00 43` | firmware version (major 1, minor 0, length-prefixed build string `n437-437-0.9j`) |
+| `00 43` | firmware version (major 1, minor 0, length-prefixed build string `n437-437-0.9k`) |
 | `00 44` | manufacturer data record (company id + 14 bytes) |
 | `00 50` | authenticate: answers **status `03` (no encryption configured)** |
 | `00 70`, `00 71` ..., `00 72` | direct write: start, data chunks (230 bytes each in the tool we tried), end. **Uncompressed 21 120 bytes only** (a size field for compressed data is refused). The stream goes into the slot set by `4D` (default 23) and is drawn when it ends; `00 73` follows when the refresh is over |

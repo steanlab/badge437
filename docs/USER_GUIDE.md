@@ -1,6 +1,6 @@
-# n437 firmware 0.9j: user guide
+# n437 firmware 0.9k: user guide
 
-Repo path: `steanlab/badge437` (public) → `docs/USER_GUIDE.md`. Russian: `docs/USER_GUIDE.ru.md`. Firmware: `firmware/n437_0.9j.bin`. Page: <https://steanlab.github.io/badge437/>.
+Repo path: `steanlab/badge437` (public) → `docs/USER_GUIDE.md`. Russian: `docs/USER_GUIDE.ru.md`. Firmware: `firmware/n437_0.9k.bin`. Page: <https://steanlab.github.io/badge437/>.
 
 Unofficial project. Flashing replaces the original firmware of the tag; do it only if you accept that, at your own risk. Tested on one tag.
 
@@ -59,7 +59,7 @@ These are the numbers of the ready UF2. If you build the bridge firmware yoursel
    The bridge must be in the list. Then the **dry run** (backup and plan only, nothing is written):
 
    ```
-   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9j.bin --no-questions --seconds 5
+   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9k.bin --no-questions --seconds 5
    ```
 
    It must end with `plan_verified` and no error. **Then check the backup it made** (file `before-1.bin` in the new folder `nebular-debug-<date>`):
@@ -80,7 +80,7 @@ These are the numbers of the ready UF2. If you build the bridge firmware yoursel
 
      ```
      python3 tools/make_tolerant_script.py tools/nebular_debug_custom.py
-     python3 tools/nebular_debug_tolerant.py --model 437 --custom-firmware firmware/n437_0.9j.bin --no-questions --seconds 5
+     python3 tools/nebular_debug_tolerant.py --model 437 --custom-firmware firmware/n437_0.9k.bin --no-questions --seconds 5
      ```
 
      The copy accepts the known record or any record that says 437 tag (panel 176 x 480, model code `2B`); every other safety check of the script stays. If the check printed a **new variant**, please open an issue with its output so that it can be listed. Check the waveform block with `check_waveform.py` as above before the flash.
@@ -89,7 +89,7 @@ These are the numbers of the ready UF2. If you build the bridge firmware yoursel
 5. **Flash:**
 
    ```
-   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9j.bin --apply --no-questions --seconds 5
+   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9k.bin --apply --no-questions --seconds 5
    ```
 
    It must end with `whole_flash_verified` and `protection_restored`. Only the application zone (the first 128 KiB of the flash) is written; the factory data stays untouched.
