@@ -1,6 +1,6 @@
 /* badge437 console: service worker. The page works offline once it has been opened (Web Bluetooth needs no network).
    Stale-while-revalidate for the files of this site: the cached copy answers at once, a fresh one is fetched in the background and used from the next start. Bump VERSION to drop old caches. */
-const VERSION = "badge437-10";
+const VERSION = "badge437-11";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

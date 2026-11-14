@@ -174,7 +174,7 @@ details.card[open]>summary{margin-bottom:8px}
 
 <details class="card">
   <summary>Для разработчиков</summary>
-  <div class="row"><button class="nc" data-c="02">Статус (02)</button><button class="nc" data-c="20">NFC: поиск (20)</button><button class="nc" data-c="26">NFC: регистры (26)</button><button class="nc" data-c="27">NFC: 60 с слушать (27)</button><button class="nc" data-c="2c 00 00 80">NFC: память (2C)</button><button class="nc" data-c="2d">NFC: обновить запись (2D)</button><button class="nc" data-c="46 00">Тест в слот 0 (46 00)</button></div>
+  <div class="row"><button class="nc" data-c="02">Статус (02)</button><button class="nc" id="bReboot">Перезагрузить метку (4F A5)</button><button class="nc" data-c="20">NFC: поиск (20)</button><button class="nc" data-c="26">NFC: регистры (26)</button><button class="nc" data-c="27">NFC: 60 с слушать (27)</button><button class="nc" data-c="2c 00 00 80">NFC: память (2C)</button><button class="nc" data-c="2d">NFC: обновить запись (2D)</button><button class="nc" data-c="46 00">Тест в слот 0 (46 00)</button></div>
   <div class="row"><label>команда (hex, каждый байт — две цифры)</label><input type="text" id="raw" placeholder="30 00 05" class="nc" disabled><button class="nc" id="bRaw" disabled>Отправить</button></div>
   <div class="row"><small>Слоты: 40 список, 41 ss стереть (FF — все), 45 ss показать, 46 ss тест, 47 ss проверить, 4D mode slot [lut] настройки. Полный список — firmware/n437/README.md.</small></div>
 </details>
@@ -439,6 +439,8 @@ const EN = {
   "растянуть": "stretch",
   "поворот": "rotation",
   "масштаб": "zoom",
+  "Перезагрузить метку (4F A5)": "Restart the tag (4F A5)",
+  "Перезагрузить метку? Заставка нарисуется заново, связь пропадёт и страница подключится снова.": "Restart the tag? The splash is drawn again, the link drops and the page reconnects.",
   "Подключиться снова": "Reconnect",
   "Обновить": "Update",
   "имя метки: OD-": "tag name: OD-",
@@ -1029,6 +1031,7 @@ $("file").onchange = () => {
 /* ================= buttons ================= */
 $("bConn").onclick = connect;
 $("bRe").onclick = reconnect;
+$("bReboot").onclick = () => { if (!confirm(T("Перезагрузить метку? Заставка нарисуется заново, связь пропадёт и страница подключится снова."))) return; reWanted = 1; send("4F A5"); };
 setInterval(() => {	/* what happens next with the link: shown beside the state */
   const t = $("tmr"), now = Date.now(), mmss = s => Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
   if (connected()) t.textContent = upBusy ? "" : T(" · автоотключение через {0}", mmss(Math.max(0, Math.round((idleEnd - now) / 1000))));
