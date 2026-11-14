@@ -1,6 +1,6 @@
-# n437 firmware 0.9f: user guide
+# n437 firmware 0.9j: user guide
 
-Repo path: `steanlab/badge437` (public) → `docs/USER_GUIDE.md`. Russian: `docs/USER_GUIDE.ru.md`. Firmware: `firmware/n437_0.9f.bin`. Page: <https://steanlab.github.io/badge437/>.
+Repo path: `steanlab/badge437` (public) → `docs/USER_GUIDE.md`. Russian: `docs/USER_GUIDE.ru.md`. Firmware: `firmware/n437_0.9j.bin`. Page: <https://steanlab.github.io/badge437/>.
 
 Unofficial project. Flashing replaces the original firmware of the tag; do it only if you accept that, at your own risk. Tested on one tag.
 
@@ -59,7 +59,7 @@ These are the numbers of the ready UF2. If you build the bridge firmware yoursel
    The bridge must be in the list. Then the **dry run** (backup and plan only, nothing is written):
 
    ```
-   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9f.bin --no-questions --seconds 5
+   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9j.bin --no-questions --seconds 5
    ```
 
    It must end with `plan_verified` and no error. **Then check the backup it made** (file `before-1.bin` in the new folder `nebular-debug-<date>`):
@@ -80,7 +80,7 @@ These are the numbers of the ready UF2. If you build the bridge firmware yoursel
 
      ```
      python3 tools/make_tolerant_script.py tools/nebular_debug_custom.py
-     python3 tools/nebular_debug_tolerant.py --model 437 --custom-firmware firmware/n437_0.9f.bin --no-questions --seconds 5
+     python3 tools/nebular_debug_tolerant.py --model 437 --custom-firmware firmware/n437_0.9j.bin --no-questions --seconds 5
      ```
 
      The copy accepts the known record or any record that says 437Q-N (panel 176 x 480, model code `2B`); every other safety check of the script stays. If the check printed a **new variant**, please open an issue with its output so that it can be listed. Check the waveform block with `check_waveform.py` as above before the flash.
@@ -89,7 +89,7 @@ These are the numbers of the ready UF2. If you build the bridge firmware yoursel
 5. **Flash:**
 
    ```
-   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9f.bin --apply --no-questions --seconds 5
+   python3 tools/nebular_debug_custom.py --model 437 --custom-firmware firmware/n437_0.9j.bin --apply --no-questions --seconds 5
    ```
 
    It must end with `whole_flash_verified` and `protection_restored`. Only the application zone (the first 128 KiB of the flash) is written; the factory data stays untouched.
@@ -150,7 +150,7 @@ Card "Operating mode".
 | Battery | saves power: deep sleep in pieces of up to 250 s | uses more (the radio stays on) |
 | For | pictures changed by timer and by tap, rare changes from the phone | Home Assistant, OpenDisplay web tool (opendisplay.org Toolbox), frequent changes |
 
-Changing the mode restarts the tag. A standalone tag that has gone to sleep is brought back with a phone tap or by cutting the power. In OpenDisplay mode the tag shows up as `OD-xxxx` with the OpenDisplay service (UUID 0x2446); a picture sent by the OpenDisplay tool lands in the slot named in the card "Panel" ("slot for the OpenDisplay stream", default 23) and is drawn at once; slots are overwritten, so keep your slideshow pictures in other slots. The OpenDisplay tool uses its own colour conversion.
+Changing the mode restarts the tag. A standalone tag that has gone to sleep is brought back with a phone tap or by cutting the power. The wake by a tap can be switched off with `4F 0A 00` (then only cutting the power opens a window; `4F 0A 01` switches it on again, the default); leave it on unless the tag wakes by itself without a tap. In OpenDisplay mode the tag shows up as `OD-xxxx` with the OpenDisplay service (UUID 0x2446); a picture sent by the OpenDisplay tool lands in the slot named in the card "Panel" ("slot for the OpenDisplay stream", default 23) and is drawn at once; slots are overwritten, so keep your slideshow pictures in other slots. The OpenDisplay tool uses its own colour conversion.
 
 ## 6. LED signals
 
@@ -163,7 +163,7 @@ Changing the mode restarts the tag. A standalone tag that has gone to sleep is b
 | yellow | slide change (tap or timer) |
 | green twice | command OK |
 | red three times | error |
-| red five times | low battery (not active yet: the battery is not measured) |
+| red five times | low battery (the signal exists, but the battery voltage is not measured yet, so it never appears) |
 | red flash (80 ms) | the window is over, the tag goes to sleep |
 
 `4F 04 01` reduces the signals to boot, errors and low battery; `4F 04 02` is the default (all events).

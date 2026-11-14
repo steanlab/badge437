@@ -1,6 +1,6 @@
-# n437 firmware 0.9f: Bluetooth commands and formats
+# n437 firmware 0.9j: Bluetooth commands and formats
 
-Repo path: `steanlab/badge437` (public) → `docs/PROTOCOL.md`. Companion: `docs/HARDWARE.md`. Firmware: `firmware/n437_0.9f.bin`. Date: 12 November 2026.
+Repo path: `steanlab/badge437` (public) → `docs/PROTOCOL.md`. Companion: `docs/HARDWARE.md`. Firmware: `firmware/n437_0.9j.bin`. Date: 14 November 2026.
 
 For people who write their own page or tool for this firmware, or their own firmware with the same formats. Most of it was exercised on a tag by the control page or the OpenDisplay tool; items marked *not tried* were not.
 
@@ -17,7 +17,7 @@ All numbers below are bytes; `len32`, `crc32`, `seq16`, `every16` are **little e
 
 | Command | Meaning / answer |
 |---|---|
-| `02` | status: boot counter, wake source, uptime, then `STATE mode= radio= wt= wb= img= tr= tn=` (and a `TRIAL ...` line after an update). `fw` shows the version; the `STATUS` line ends with `wf=1` (the panel data block passes its checksum) or `wf=0` (damaged, the tag will not draw; from 0.9f) |
+| `02` | status: boot counter, wake source, uptime, then `STATE mode= radio= wt= wb= img= tr= tn=` (and a `TRIAL ...` line after an update). `fw` shows the version; the `STATUS` line ends with `wf=1` (the panel data block passes its checksum) or `wf=0` (damaged, the tag will not draw; from 0.9f). Fields: `boots` = deep-sleep wake-ups in a row since the last power-up (8-bit, wraps at 256), `dw=1` = this start is a wake-up from deep sleep, `src` = wake-up status register (bit 1 timer, bit 2 core, bit 3 pad = NFC chip on PC4; bit 7 is set on every start and means nothing), `up` = seconds since this start (a 32-bit timer difference: wraps every 268 s), `v` / `vr` = supply voltage / raw ADC value (**not validated**, do not read it as a voltage), `irq=1` = PC4 (NFC interrupt) is high, `nf` = flags of the NFC chip read at the last pad wake-up (`FFF9 FFF8 FFF7`; 0 = no event), `sr` = deep-sleep entries that were refused (normally 0), `ld` = reason of the last disconnect (255 = none); `irq`, `nf`, `sr` from 0.9j |
 | `01 nn` | deep sleep (no retention) for `nn` seconds, then a cold start |
 | `04 nn` | after every wake stay connectable 10 s, then deep sleep `nn` s again (`00` stops) |
 | `40` | slot list: `slot N: fmt F, B bytes, S sectors, crc=...` per used slot and `slots: U used, F of 49 sectors free, largest run L, max 24 slots` |
@@ -43,6 +43,7 @@ All numbers below are bytes; `len32`, `crc32`, `seq16`, `every16` are **little e
 | `4F 07 A5` | OTA commit (section 6) |
 | `4F 08 n` | slide order 0 in turn / 1 random (0.9e), stored; the `SS ...` report ends with `order=n` |
 | `4F 09 n` | boot splash 0 off / 1 on (0.9e), stored; `SYS ...` ends with `sp=n` |
+| `4F 0A n` | wake from deep sleep by an NFC tap 0 off / 1 on (default, 0.9j), stored; `SYS ...` shows `tw=n`. Off: the tag sleeps in pieces and only a power cut opens a window; taps still work while the tag is awake |
 | `34` | abort a running draw (at the next BUSY wait) |
 | `2C hh ll [n]`, `2D` | NFC chip memory dump (n <= 128) / rewrite the text record now |
 | `30`..`3F`, `10`, `11`, `20`, `21`, `24`..`2B` | diagnostics from the bring-up builds (raw panel access, test patterns, pin probes, LED, NFC probes); not needed by a normal client and **not documented**; they can draw garbage on the panel |
@@ -86,7 +87,7 @@ Messages start with `00` and a command byte; the replies are `status cmd data`.
 | Message | Answer |
 |---|---|
 | `00 40` | configuration: 176 x 480, four colours (black, white, red, yellow), rotation 0, no encryption; packets 1, 2, 4 and 32 are answered |
-| `00 43` | firmware version (major 1, minor 0, length-prefixed build string `n437-437-0.9f`) |
+| `00 43` | firmware version (major 1, minor 0, length-prefixed build string `n437-437-0.9j`) |
 | `00 44` | manufacturer data record (company id + 14 bytes) |
 | `00 50` | authenticate: answers **status `03` (no encryption configured)** |
 | `00 70`, `00 71` ..., `00 72` | direct write: start, data chunks (230 bytes each in the tool we tried), end. **Uncompressed 21 120 bytes only** (a size field for compressed data is refused). The stream goes into the slot set by `4D` (default 23) and is drawn when it ends; `00 73` follows when the refresh is over |

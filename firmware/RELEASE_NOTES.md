@@ -1,18 +1,28 @@
-# n437 firmware 0.9f: release notes
+# n437 firmware 0.9j: release notes
 
-Repo path: `steanlab/badge437` (public) → `firmware/RELEASE_NOTES.md`. Release date: 12 November 2026. The previous releases, 0.9d (`firmware/n437_0.9d.bin`) and 0.9a (`firmware/n437_0.9a.bin`), stay in the repository.
+Repo path: `steanlab/badge437` (public) → `firmware/RELEASE_NOTES.md`. Release date: 14 November 2026. The previous releases, 0.9f (`firmware/n437_0.9f.bin`), 0.9e, 0.9d and 0.9a, stay in the repository.
 
 | | |
 |---|---|
-| File | `firmware/n437_0.9f.bin` (102 656 bytes) |
-| SHA-256 | `67082e0249575a91fccba8bff273e728b3af75a83ecd8a2b9a469916860f5480` (also in `firmware/SHA256SUMS.txt`; check with `sha256sum -c SHA256SUMS.txt`) |
-| Version string | `437-0.9f` (boot line `N437 fw 437-0.9f`) |
+| File | `firmware/n437_0.9j.bin` (103224 bytes) |
+| SHA-256 | `2034043e63bcc7e20d4ed55304df0412788664c2c50300fbbad2f88cde2fb4d6` (also in `firmware/SHA256SUMS.txt`; check with `sha256sum -c SHA256SUMS.txt`) |
+| Version string | `437-0.9j` (boot line `N437 fw 437-0.9j`) |
 | Target | Hanshow Nebular Pro 437Q-N (Telink TLSR8258, 512 KiB flash, 4.37" 176 x 480 black / white / red / yellow panel) |
-| Header | `KNLT` at bytes 8..11, length field at 0x18 = file length = 102656 |
 | Install | with the programmer the first time ([user guide](../docs/USER_GUIDE.md)), later over Bluetooth (OTA) from 0.9 or later; the memory layout is unchanged, pictures and settings are kept |
-| Page | <https://steanlab.github.io/badge437/> (new slideshow card, thumbnails, splash switch) |
+| Page | <https://steanlab.github.io/badge437/> |
 
-## What is new in 0.9f
+## What is new in 0.9j (fixes; update if the tag runs the slideshow by itself)
+
+* **The tag did not go to sleep with a long slideshow interval.** 0.9f and earlier slept in pieces of up to 250 s. The wake-up time handed to the chip's sleep call is a 32-bit tick count; 250 s is further ahead than the chip's library accepts, so the sleep was **silently refused** and the tag stayed awake. Seen on tags with a battery and an interval of 1080 minutes: a slide change, then a weak blue flash every 5 s, red flashes, again and again, and a battery drained at the awake current. Pieces are now **120 s**. Found with a log of the uptime and the new `sr=` counter: the tag had not restarted in 21 minutes. (The limit is inferred from the behaviour: the library is closed.)
+* **The connectable window opened again after 268 s.** The "window is over" test compared a 32-bit timer difference that wraps every 268 s; a tag that stayed awake got a fresh window (blue flashes) every 4 min 28 s. The end of a window is now remembered.
+* **A refused sleep is handled**: counted (`sr=` in `STATUS`), retried with the timer alone, the interval counter takes the piece back, one red flash per idle period instead of one per second.
+* **A PC4 wake-up counts as a tap only when the NFC chip reports an event** (flags `nf=` in `STATUS`); otherwise it is a quiet timer piece.
+* **New setting `4F 0A n`**: wake from deep sleep by a tap on / off (default on). Taps still work while the tag is awake.
+* **`STATUS` is complete**: the log line was cut at 100 characters (the tail `ld=`, `wf=` was lost on long lines); the buffer is 160 now. New fields `vr` (raw supply ADC, **not validated**), `irq`, `nf`, `sr` ([protocol](../docs/PROTOCOL.md)).
+* Tested on **one** tag with its stock battery (13 to 14 November 2026): it sleeps without any LED signal (20 minutes, then more than a day), a tap wakes it (`src=0x8c`, `nf` not zero), the slide changes and the window opens; `sr=0` after more than 1000 quiet wake-ups. Battery life and the current were **not measured**. Not tested: power loss during an update, other tags.
+* Not solved: the battery voltage is still not measured (`v=0`; `vr` is a raw ADC number, not a voltage), so the low-battery signal never appears.
+
+## What is new in 0.9f (earlier release)
 
 * **Panel data check reported.** The `STATUS` line now ends with `wf=1` or `wf=0`: whether the waveform block at `0x78000` passes its checksum. The page shows a red notice when it does not (uploads still work; drawing does not). Nothing else changed; 0.9e features stay. The 0.9f file was built and the page was tested in a browser simulation; the new flag has not yet been seen on a tag.
 
@@ -82,7 +92,8 @@ Tested by the author on the **same one tag** (powered from the programmer, no ba
 | 0.9b / 0.9c | two-pass drawing, dark red as red (test builds, not released) |
 | 0.9d | eight colours, two-plane slot formats, default orientation |
 | 0.9e | boot splash, slide order, no redraw of the same slide |
-| 0.9f | waveform block state in `STATUS` (`wf=`), notice on the page (this release) |
+| 0.9f | waveform block state in `STATUS` (`wf=`), notice on the page |
+| 0.9j | fixes: deep sleep pieces of 120 s (250 s was refused), end of the window remembered, `4F 0A`, complete `STATUS` (this release; 0.9g to 0.9i were test builds, not released) |
 
 ## Memory layout (data is not kept across layout changes)
 
