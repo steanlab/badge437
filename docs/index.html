@@ -48,7 +48,7 @@ progress{width:100%;height:10px}
 table{border-collapse:collapse;width:100%;font-size:14px}
 td,th{padding:4px 6px;border-bottom:1px solid var(--bd);text-align:left}
 th{color:var(--mut);font-weight:600;font-size:12px}
-#prev{width:176px;height:480px;border:1px solid var(--bd);border-radius:4px;image-rendering:pixelated;background:#fff}
+#prev{touch-action:none;cursor:grab;width:176px;height:480px;border:1px solid var(--bd);border-radius:4px;image-rendering:pixelated;background:#fff}
 #st,small,label{color:var(--mut)}
 label{font-size:13px}
 #log{background:var(--log);color:var(--logfg);font:13px/1.35 ui-monospace,Menlo,Consolas,monospace;height:340px;overflow:auto;padding:8px;border-radius:8px;white-space:pre-wrap;word-break:break-all}
@@ -64,7 +64,7 @@ details.card[open]>summary{margin-bottom:8px}
 </head>
 <body>
 <main>
-<h1>badge437 — консоль метки e-paper 4,37" на Telink TLSR8258</h1>
+<h1>badge437 — консоль метки e-paper 4,37″ на Telink TLSR8258</h1>
 
 <div class="card">
   <div class="row">
@@ -117,6 +117,8 @@ details.card[open]>summary{margin-bottom:8px}
         <select id="fit"><option value="cover">заполнить (обрезать)</option><option value="contain">целиком (поля белые)</option><option value="stretch">растянуть</option></select></div>
       <div class="row"><label>поворот</label>
         <select id="rot"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></div>
+      <div class="row"><label>масштаб</label><input type="range" id="zoom" min="100" max="400" value="100"><button class="sm" id="bPan0">сброс</button></div>
+      <div class="row"><small>Картинку можно двигать: тяните предпросмотр пальцем или мышью; колесо мыши меняет масштаб.</small></div>
       <div class="row"><label>растр</label>
         <select id="dith"><option value="fs">Флойд–Стейнберг (фото)</option><option value="atk">Аткинсон (гравюры, текст)</option><option value="bay">упорядоченный (сжимается лучше)</option><option value="none">без растра</option></select></div>
       <div class="row"><label>цвета</label>
@@ -408,7 +410,7 @@ const sectorsFor = len => Math.ceil((256 + len) / 4096);
 /* ================= languages: Russian is the source text, English is looked up here ================= */
 const EN = {
   "badge437 — консоль": "badge437 console",
-  "badge437 — консоль метки e-paper 4,37" на Telink TLSR8258": "badge437: console for the 4.37\" e-paper tag on a Telink TLSR8258",
+  "badge437 — консоль метки e-paper 4,37″ на Telink TLSR8258": "badge437: console for the 4.37\" e-paper tag on a Telink TLSR8258",
   "Подключиться": "Connect",
   "Отключиться": "Disconnect",
   "показать все устройства": "show all devices",
@@ -432,6 +434,10 @@ const EN = {
   "целиком (поля белые)": "whole picture (white margins)",
   "растянуть": "stretch",
   "поворот": "rotation",
+  "масштаб": "zoom",
+  "сброс": "reset",
+  "Картинку можно двигать: тяните предпросмотр пальцем или мышью; колесо мыши меняет масштаб.": "The picture can be moved: drag the preview with a finger or the mouse; the mouse wheel changes the zoom.",
+  "— отключено страницей: 5 минут без действий (пока страница подключена, метка не спит и тратит батарею) —": "— disconnected by the page: 5 minutes without activity (while the page is connected the tag does not sleep and drains the battery) —",
   "растр": "dithering",
   "Флойд–Стейнберг (фото)": "Floyd–Steinberg (photos)",
   "Аткинсон (гравюры, текст)": "Atkinson (engravings, text)",
@@ -701,7 +707,21 @@ async function connect(){
   }
 }
 
+/* a connected page keeps the tag awake (its window never ends): disconnect after 5 minutes without any action of the user */
+let idleT = 0;
+function idleKick(){
+  clearTimeout(idleT);
+  idleT = setTimeout(() => {
+    if (!(dev && dev.gatt && dev.gatt.connected)) return;
+    if (upBusy){ idleKick(); return; }
+    add(T("— отключено страницей: 5 минут без действий (пока страница подключена, метка не спит и тратит батарею) —"), "sys");
+    dev.gatt.disconnect();
+  }, 5 * 60 * 1000);
+}
+["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, idleKick, true));
+
 async function send(s, strict){
+  idleKick();
   if (!chr){ add(T("нет соединения"), "sys"); if (strict) throw new Error(T("нет соединения")); return; }
   try{
     const a = typeof s === "string" ? parseHex(s) : s;
@@ -899,7 +919,7 @@ async function upload(slot, p, ui){
 }
 
 /* ================= picture ================= */
-let srcImg = null, renderT = 0;
+let srcImg = null, renderT = 0, panX = 0, panY = 0;	/* pan: shift of the picture in panel pixels (drag on the preview) */
 function schedule(){ clearTimeout(renderT); renderT = setTimeout(render, 60); }
 function render(){
   if (!srcImg) return;
@@ -910,8 +930,10 @@ function render(){
   const sw = rot % 180 ? sh0 : sw0, sh = rot % 180 ? sw0 : sh0;
   let dw = W, dh = H;
   if (fit !== "stretch"){ const k = fit === "cover" ? Math.max(W / sw, H / sh) : Math.min(W / sw, H / sh); dw = sw * k; dh = sh * k; }
+  { const z = +$("zoom").value / 100; dw *= z; dh *= z; }
+  { const mx = Math.abs(dw - W) / 2, my = Math.abs(dh - H) / 2; panX = Math.max(-mx, Math.min(mx, panX)); panY = Math.max(-my, Math.min(my, panY)); }	/* cover: no empty edge; contain: the picture stays inside */
   const iw = rot % 180 ? dh : dw, ih = rot % 180 ? dw : dh;
-  g.translate(W / 2, H / 2); g.rotate(rot * Math.PI / 180);
+  g.translate(W / 2 + panX, H / 2 + panY); g.rotate(rot * Math.PI / 180);
   g.imageSmoothingQuality = "high";
   g.drawImage(srcImg, -iw / 2, -ih / 2, iw, ih);
   const seven = $("pal").value === "7", pal = seven ? PAL7 : PAL;
@@ -927,7 +949,17 @@ function render(){
   $("prog").value = 0;
   refreshUp();
 }
-["fit", "rot", "dith", "pal", "bri", "con"].forEach(id => $(id).addEventListener("input", schedule));
+["fit", "rot", "dith", "pal", "bri", "con", "zoom"].forEach(id => $(id).addEventListener("input", schedule));
+["fit", "rot"].forEach(id => $(id).addEventListener("input", () => { panX = panY = 0; }));
+$("bPan0").onclick = () => { panX = panY = 0; $("zoom").value = 100; schedule(); };
+{ /* drag the preview to move the picture, wheel to zoom */
+  const pv = $("prev"); let drag = null;
+  pv.addEventListener("pointerdown", e => { if (!srcImg) return; drag = {x: e.clientX, y: e.clientY, px: panX, py: panY}; pv.setPointerCapture(e.pointerId); pv.style.cursor = "grabbing"; });
+  pv.addEventListener("pointermove", e => { if (!drag) return; const r = pv.getBoundingClientRect(); panX = drag.px + (e.clientX - drag.x) * W / r.width; panY = drag.py + (e.clientY - drag.y) * H / r.height; schedule(); });
+  const end = () => { drag = null; pv.style.cursor = "grab"; };
+  pv.addEventListener("pointerup", end); pv.addEventListener("pointercancel", end);
+  pv.addEventListener("wheel", e => { if (!srcImg) return; e.preventDefault(); const z = $("zoom"); z.value = Math.max(100, Math.min(400, +z.value - Math.sign(e.deltaY) * 10)); schedule(); }, {passive: false});
+}
 /* the picture settings are remembered in this browser (not on the tag) */
 ["fit", "dith", "pal", "bri", "con"].forEach(id => {
   try{ const v = localStorage.getItem("pic_" + id); if (v !== null && [...($(id).options || [{value: v}])].some(o => o.value === v)) $(id).value = v; }catch(e){}
@@ -937,7 +969,7 @@ $("file").onchange = () => {
   const f = $("file").files[0];
   if (!f) return;
   const img = new Image();
-  img.onload = () => { srcImg = img; render(); };
+  img.onload = () => { srcImg = img; panX = panY = 0; $("zoom").value = 100; render(); };
   img.onerror = () => add(T("не удалось прочитать картинку"), "sys");
   img.src = URL.createObjectURL(f);
 };
