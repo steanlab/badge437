@@ -70,14 +70,16 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="row">
     <button id="bConn" class="pri">Подключиться</button>
     <button id="bDisc" disabled>Отключиться</button>
+    <button id="bRe" disabled>Подключиться снова</button>
     <button id="bLang" class="sm" title="Language / Язык">EN</button>
     <button id="bInstall" class="sm" hidden>Установить как приложение</button>
     <button id="bWiz" class="sm" hidden>Мастер первого запуска</button>
     <label><input type="checkbox" id="showAll"> показать все устройства</label>
-    <span id="st">не подключено</span>
+    <span id="st">не подключено</span><small id="tmr"></small>
   </div>
   <div class="row"><small>Нужен Chrome/Edge с Web Bluetooth. Имя метки: OD- и четыре символа MAC (например OD-A1B2).</small></div>
   <div id="fwWarn" class="warn" hidden></div>
+  <div id="fwNew" class="row" hidden><b id="fwNewTxt"></b><button class="pri sm" id="bFwNew">Обновить</button></div>
 </div>
 
 <details class="card" id="wizCard" open>
@@ -102,8 +104,8 @@ details.card[open]>summary{margin-bottom:8px}
     <select id="ssUnit" class="nc"><option value="1">минут</option><option value="60">часов</option></select>
     <label>порядок</label><select id="ssOrder" class="nc"><option value="0">по кругу</option><option value="1">случайный</option></select></div>
   <div class="row"><label>слайды в показе</label><span id="ssMask"></span></div>
-  <div class="row"><label>чистка панели каждые</label><input type="number" id="ssClean" class="nc" min="0" max="250" value="0" style="width:4.5em">
-    <label>слайдов (0 — выкл), способ</label><select id="ssCleanMode" class="nc"><option value="1">белый</option><option value="2">чёрный, затем белый</option></select></div>
+  <div class="row"><label>чистка панели каждые <input type="number" id="ssClean" class="nc" min="0" max="250" value="0" style="width:4.5em"> слайдов (0 — выкл)</label>
+    <label>способ</label><select id="ssCleanMode" class="nc"><option value="1">белый</option><option value="2">чёрный, затем белый</option></select></div>
   <div class="row"><button class="nc" id="bSsSet" disabled>Применить</button><button class="nc" id="bSsGet" disabled>Прочитать</button><button class="nc" id="bSsNext" disabled>Следующий слайд сейчас</button></div>
   <div class="row"><small id="ssInfo">Работает в автономном режиме; слайд меняется и касанием телефона. Если выпал тот же слайд, что уже на панели, он не перерисовывается; порядок «случайный» и пропуск перерисовки есть в прошивке 0.9e и новее.</small></div>
 </div>
@@ -151,6 +153,8 @@ details.card[open]>summary{margin-bottom:8px}
   <div class="row"><label>режим</label>
     <select id="mMode"><option value="0">Автономный (по умолчанию, экономит батарею)</option><option value="1">OpenDisplay (всегда на связи)</option></select></div>
   <div class="row"><label><input type="checkbox" id="mSplash" class="nc" checked> заставка при включении и перезагрузке (чёрный фон, BADGE437 PROJECT, версия; прошивка 0.9e)</label></div>
+  <div class="row"><label>имя метки: OD-</label><input type="text" id="mName" maxlength="5" style="width:6em"><button class="nc" id="bName" disabled>Задать имя</button><button class="nc" id="bBlink" disabled>Мигнуть светодиодом</button></div>
+  <div class="row"><small>Имя: от 1 до 5 латинских букв или цифр; пустое поле возвращает имя по умолчанию. Браузер может ещё какое-то время показывать старое имя. «Мигнуть» помогает найти нужную метку среди нескольких: светодиод по очереди горит тремя цветами около 9 секунд.</small></div>
   <div class="row"><label>связь после касания, с</label><input type="number" id="mTap" min="10" max="250" value="60" style="width:4.5em">
     <label>после включения питания, с</label><input type="number" id="mBoot" min="10" max="250" value="120" style="width:4.5em">
     <button class="nc" id="bModeSet" disabled>Применить</button><button class="nc" id="bModeGet" disabled>Прочитать</button></div>
@@ -435,6 +439,25 @@ const EN = {
   "растянуть": "stretch",
   "поворот": "rotation",
   "масштаб": "zoom",
+  "Подключиться снова": "Reconnect",
+  "Обновить": "Update",
+  "имя метки: OD-": "tag name: OD-",
+  "Задать имя": "Set the name",
+  "Мигнуть светодиодом": "Blink the LED",
+  "Имя: от 1 до 5 латинских букв или цифр; пустое поле возвращает имя по умолчанию. Браузер может ещё какое-то время показывать старое имя. «Мигнуть» помогает найти нужную метку среди нескольких: светодиод по очереди горит тремя цветами около 9 секунд.": "Name: 1 to 5 Latin letters or digits; an empty field restores the default name. The browser may show the old name for a while. \"Blink\" helps to find one tag among several: the LED shows its three colours in turn for about 9 seconds.",
+  "чистка панели каждые ": "clean the panel every ",
+  " слайдов (0 — выкл)": " slides (0 = off)",
+  "способ": "method",
+  "Имя: только латинские буквы и цифры, не больше 5.": "Name: Latin letters and digits only, at most 5.",
+  " · автоотключение через {0}": " · auto-disconnect in {0}",
+  " · окно связи метки открыто ещё около {0} с": " · the tag's link window stays open for about {0} s more",
+  "подключаюсь снова…": "reconnecting…",
+  "Не удалось подключиться снова: метка, вероятно, уснула. Коснитесь её телефоном или отключите и включите питание, затем нажмите «Подключиться снова».": "Could not reconnect: the tag is probably asleep. Tap it with the phone or cut and restore the power, then press \"Reconnect\".",
+  "В метке прошивка {0}, доступна новая: {1}.": "The tag runs firmware {0}, a newer one is available: {1}.",
+  "Скачиваю прошивку {0}…": "Downloading firmware {0}…",
+  "Не удалось получить прошивку: ": "Could not get the firmware: ",
+  "контрольная сумма файла не сходится": "the checksum of the file does not match",
+  "нет загруженных слайдов": "no slides uploaded",
   "сброс": "reset",
   "Картинку можно двигать: тяните предпросмотр пальцем или мышью; колесо мыши меняет масштаб.": "The picture can be moved: drag the preview with a finger or the mouse; the mouse wheel changes the zoom.",
   "— отключено страницей: 5 минут без действий (пока страница подключена, метка не спит и тратит батарею) —": "— disconnected by the page: 5 minutes without activity (while the page is connected the tag does not sleep and drains the battery) —",
@@ -646,6 +669,8 @@ function setState(on, key, extra){
   $("st").textContent = T(stKey) + stExtra;
   $("bConn").disabled = on;
   $("bDisc").disabled = !on;
+  $("bRe").disabled = on || !dev;
+  if (typeof renderFwNew === "function") renderFwNew();
   document.querySelectorAll(".nc,[data-c]").forEach(b => b.disabled = !on);
   refreshUp();
   if (typeof renderOta === "function") renderOta();
@@ -686,7 +711,35 @@ async function connect(){
       if (buf.length){ add(buf); buf = ""; }
       add(T("— связь потеряна —"), "sys");
       setState(false, "не подключено");
+      winEnd = Date.now() + curWt * 1000;
+      if (reWanted){ reWanted = 0; winEnd = 0; autoRe(); }
     });
+    await link();
+  }catch(e){
+    add(T("ошибка: ") + e.message, "sys");
+    setState(false, "не подключено");
+  }
+}
+/* the link to a tag that was already chosen: no device chooser needed */
+let lastMode = "0", reWanted = 0, winEnd = 0, idleEnd = 0, curWt = 60;
+const waitMs = ms => new Promise(r => setTimeout(r, ms));
+async function reconnect(){
+  if (!dev || connected()) return;
+  try{ await link(); }
+  catch(e){ add(T("Не удалось подключиться снова: метка, вероятно, уснула. Коснитесь её телефоном или отключите и включите питание, затем нажмите «Подключиться снова»."), "sys"); setState(false, "не подключено"); }
+}
+async function autoRe(){	/* after a restart that the page asked for (new firmware, mode change) */
+  for (let i = 0; i < 4; i++){
+    await waitMs(3000);
+    if (connected()) return;
+    add(T("подключаюсь снова…"), "sys");
+    try{ await link(); return; }catch(e){}
+  }
+  add(T("Не удалось подключиться снова: метка, вероятно, уснула. Коснитесь её телефоном или отключите и включите питание, затем нажмите «Подключиться снова»."), "sys");
+  setState(false, "не подключено");
+}
+async function link(){
+  {
     setState(false, "подключение…");
     const srv = await dev.gatt.connect();
     const svc = await srv.getPrimaryService(SVC);
@@ -701,16 +754,14 @@ async function connect(){
     setTimeout(() => { if (connected()) send("4D").catch(() => {}); }, 1000);
     setTimeout(() => { if (connected()) send("4B").catch(() => {}); }, 1500);
     setTimeout(() => { if (!fwInfo){ fwInfo = {ver: "?", old: true}; renderFw(); } }, 4000);
-  }catch(e){
-    add(T("ошибка: ") + e.message, "sys");
-    setState(false, "не подключено");
+    winEnd = 0; idleKick();
   }
 }
 
 /* a connected page keeps the tag awake (its window never ends): disconnect after 5 minutes without any action of the user */
 let idleT = 0;
 function idleKick(){
-  clearTimeout(idleT);
+  clearTimeout(idleT); idleEnd = Date.now() + 5 * 60 * 1000;
   idleT = setTimeout(() => {
     if (!(dev && dev.gatt && dev.gatt.connected)) return;
     if (upBusy){ idleKick(); return; }
@@ -741,6 +792,7 @@ function renderFw(){
   const bad = fwInfo && fwInfo.wf === 0 ? T("Блок формы сигнала в метке повреждён (контрольная сумма не сходится): метка не сможет рисовать. Картинки загрузить можно, показать нельзя. Нужен ремонт программатором, см. руководство, раздел 8.") : "";
   w.textContent = [msg, bad].filter(Boolean).join(" "); w.hidden = !(msg || bad);
   renderOta();
+  renderFwNew();
   fwOk = !msg;
   refreshUp();
 }
@@ -756,7 +808,7 @@ function lineHook(t){
   if ((m = /^OTA (DONE|HALF-DONE)/.exec(t))){ otaStaged = null; add(T("метка переключилась на новую прошивку и перезапускается: подключитесь снова (окно после включения питания)"), "sys"); renderOta(); }
   if ((m = /^STATE mode=(\d) radio=(\d) wt=(\d+) wb=(\d+)/.exec(t)) || (m = /^SYS .* mode=(\d) wt=(\d+) wb=(\d+)/.exec(t))){
     const w = m.length === 5 ? [m[3], m[4]] : [m[2], m[3]];
-    $("mMode").value = m[1]; $("mTap").value = w[0]; $("mBoot").value = w[1];
+    lastMode = m[1]; $("mMode").value = m[1]; $("mTap").value = w[0]; $("mBoot").value = w[1]; curWt = +w[0] || 60;
   }
   if ((m = /^SS (on|off) every=(\d+) mask=([0-9A-Fa-f]+) poll=(\d+) clean=(\d+)\/(\d+) last=(-?\d+) el=(\d+)(?: order=(\d))?/.exec(t))){
     const ev = +m[2];
@@ -976,6 +1028,12 @@ $("file").onchange = () => {
 
 /* ================= buttons ================= */
 $("bConn").onclick = connect;
+$("bRe").onclick = reconnect;
+setInterval(() => {	/* what happens next with the link: shown beside the state */
+  const t = $("tmr"), now = Date.now(), mmss = s => Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  if (connected()) t.textContent = upBusy ? "" : T(" · автоотключение через {0}", mmss(Math.max(0, Math.round((idleEnd - now) / 1000))));
+  else t.textContent = winEnd > now ? T(" · окно связи метки открыто ещё около {0} с", Math.round((winEnd - now) / 1000)) : "";
+}, 1000);
 $("bDisc").onclick = () => { if (dev && dev.gatt.connected) dev.gatt.disconnect(); };
 $("bList").onclick = () => send("40");
 $("bEraseAll").onclick = () => { if (confirm(T("Стереть все слоты?"))){ send("41 ff"); setTimeout(() => send("40"), 6000); } };
@@ -1030,6 +1088,7 @@ $("bFwUp").onclick = async () => {
 $("bFwGo").onclick = () => {
   if (!otaStaged) return;
   if (!confirm(T("Переключиться на прошивку {0}? Метка перезапустится. Если новая прошивка не запустится, метка сама вернёт прежнюю после трёх неудачных запусков (около минуты); если и откат не сработает, нужен программатор.", otaStaged))) return;
+  reWanted = 1;
   send("4F 07 a5");
 };
 
@@ -1038,19 +1097,23 @@ $("bFwGo").onclick = () => {
 let ssMaskV = 0xFFFFFF, ssPoll = 30;
 function renderSsMask(){
   const el = $("ssMask");
-  el.textContent = "";
-  for (let i = 0; i < 24; i++){
-    const used = slots.some(s => s.n === i);
+  el.textContent = ""; el.style.display = "flex"; el.style.flexWrap = "wrap"; el.style.gap = "8px";
+  const used = slots.slice().sort((x, y) => x.n - y.n);
+  if (!used.length){ el.textContent = T("нет загруженных слайдов"); return; }
+  for (const sl of used){
     const l = document.createElement("label");
-    l.style.marginRight = "8px"; l.style.opacity = used ? "1" : "0.45";
-    const c = document.createElement("input");
-    c.type = "checkbox"; c.className = "nc"; c.dataset.n = i; c.checked = !!(ssMaskV >> i & 1); c.disabled = !connected();
+    l.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:2px";
+    const th = getThumb(sl.n, sl.crc);
+    if (th){ const im = document.createElement("img"); im.src = th; im.width = 33; im.height = 90; im.style.cssText = "border:1px solid var(--bd);border-radius:3px;image-rendering:pixelated"; l.appendChild(im); }
+    const w = document.createElement("span"), c = document.createElement("input");
+    c.type = "checkbox"; c.className = "nc"; c.dataset.n = sl.n; c.checked = !!(ssMaskV >> sl.n & 1); c.disabled = !connected();
     c.onchange = () => { ssMaskV = readSsMask(); };
-    l.appendChild(c); l.appendChild(document.createTextNode(String(i)));
-    el.appendChild(l);
+    w.appendChild(c); w.appendChild(document.createTextNode(String(sl.n)));
+    l.appendChild(w); el.appendChild(l);
   }
 }
-function readSsMask(){ let v = 0; document.querySelectorAll("#ssMask input").forEach(c => { if (c.checked) v |= 1 << +c.dataset.n; }); return v; }
+/* the bits of the slots that are not shown (empty ones) stay as they are */
+function readSsMask(){ let v = ssMaskV; document.querySelectorAll("#ssMask input").forEach(c => { const bit = 1 << +c.dataset.n; v = c.checked ? v | bit : v & ~bit; }); return v; }
 renderSsMask();
 $("bSsGet").onclick = () => send("4B");
 $("bSsNext").onclick = () => send("4C");
@@ -1063,10 +1126,40 @@ $("bSsSet").onclick = () => {
   send(Uint8Array.from([0x4A, $("ssOn").checked ? 1 : 0, mins & 255, mins >> 8, mask & 255, ssPoll, clean, +$("ssCleanMode").value, (mask >> 8) & 255, (mask >> 16) & 255]));
   setTimeout(() => send(Uint8Array.from([0x4F, 8, +$("ssOrder").value])), 400);
 };
+$("bBlink").onclick = () => send("10");
+$("bName").onclick = () => {
+  const v = $("mName").value.trim();
+  if (!/^[A-Za-z0-9]{0,5}$/.test(v)){ alert(T("Имя: только латинские буквы и цифры, не больше 5.")); return; }
+  send(Uint8Array.from([0x4E, ...[...v].map(ch => ch.charCodeAt(0))]));
+};
 $("mSplash").onchange = () => send(Uint8Array.from([0x4F, 9, $("mSplash").checked ? 1 : 0]));
 
 /* ================= first-start wizard ================= */
 const WIZ_CUR = 100;		/* 0.9j */
+/* the newest released firmware: fw/latest.json beside the page (version, file, size, sha256) */
+let fwLatest = null;
+function verNum(v){ const m = /^437-(\d+)\.(\d+)([a-z]?)/.exec(v || ""); return m ? +m[1] * 1000 + +m[2] * 10 + (m[3] ? m[3].charCodeAt(0) - 96 : 0) : -1; }
+function renderFwNew(){
+  const v = fwNum(), show = !!(connected() && fwLatest && v >= 80 && v < verNum(fwLatest.version));
+  $("fwNew").hidden = !show;
+  if (show) $("fwNewTxt").textContent = T("В метке прошивка {0}, доступна новая: {1}.", fwInfo.ver, fwLatest.version);
+}
+fetch("fw/latest.json", {cache: "no-store"}).then(r => r.ok ? r.json() : null).then(j => { if (j && /^437-/.test(j.version) && /^[\w.-]+\.bin$/.test(j.file)){ fwLatest = j; renderFwNew(); } }).catch(() => {});
+$("bFwNew").onclick = async () => {
+  if (!fwLatest || upBusy) return;
+  try{
+    add(T("Скачиваю прошивку {0}…", fwLatest.version), "sys");
+    const r = await fetch("fw/" + fwLatest.file, {cache: "no-store"}); if (!r.ok) throw new Error("HTTP " + r.status);
+    const b = await r.arrayBuffer();
+    const h = [...new Uint8Array(await crypto.subtle.digest("SHA-256", b))].map(x => x.toString(16).padStart(2, "0")).join("");
+    if (h !== fwLatest.sha256) throw new Error(T("контрольная сумма файла не сходится"));
+    otaImg = otaParse(b); otaStaged = null;
+    if (!otaImg.ok) throw new Error(otaImg.why);
+    $("otaFile").textContent = T("Файл: {0}, {1} байт, CRC-32 {2}.", otaImg.ver, otaImg.len, otaImg.crc.toString(16).toUpperCase().padStart(8, "0"));
+    goTo("otaCard"); renderOta();
+    $("bFwUp").click();
+  }catch(e){ add(T("Не удалось получить прошивку: ") + e.message, "sys"); }
+};
 function fwNum(){
   const m = fwInfo && /^437-(\d+)\.(\d+)([a-z]?)/.exec(fwInfo.ver);
   return m ? +m[1] * 1000 + +m[2] * 10 + (m[3] ? m[3].charCodeAt(0) - 96 : 0) : -1;
@@ -1082,7 +1175,7 @@ function renderWiz(){
     {ok: on && v >= WIZ_CUR, wait: on && v < 0, txt: !on ? T("Проверка прошивки (после подключения).") : v < 0 ? T("Читаю версию прошивки…") : v >= WIZ_CUR ? T("Прошивка {0}: актуальная.", fwInfo.ver)
         : v < 80 ? T("Прошивка {0}: старше 0.8, обновление по Bluetooth в ней невозможно, перепрошейте программатором (файл firmware/n437_0.9j.bin).", fwInfo.ver)
         : T("Прошивка {0}: есть новее (0.9j). Скачайте firmware/n437_0.9j.bin из репозитория и загрузите в карточке «Обновление прошивки (OTA)».", fwInfo.ver),
-     btn: (on && v >= 80 && v < WIZ_CUR) ? [T("Открыть карточку OTA"), () => goTo("otaCard")] : null},
+     btn: (on && v >= 80 && v < WIZ_CUR) ? (fwLatest ? [T("Обновить"), () => $("bFwNew").click()] : [T("Открыть карточку OTA"), () => goTo("otaCard")]) : null},
     {ok: on && !!mirrored, wait: on && !odCfg, txt: !on ? T("Проверка ориентации (после подключения).") : !odCfg ? T("Читаю ориентацию…") : mirrored ? T("Ориентация: зеркально по горизонтали (как нужно для этой панели).") : T("Ориентация сейчас не «зеркально по горизонтали»: картинка может выйти зеркальной."),
      btn: (on && odCfg && !mirrored) ? [T("Поставить «зеркально»"), () => { send(Uint8Array.from([0x4D, 2, odCfg.slot, parseInt(odCfg.lut, 16) & 255])); setTimeout(() => send("4D"), 400); }] : null},
     {ok: on && slots.length > 0, txt: slots.length ? T("В метке слайдов: {0}.", slots.length) : T("Выберите картинку в карточке «Новая картинка», нажмите «Загрузить в метку»."),
@@ -1117,6 +1210,7 @@ $("bModeSet").onclick = () => {
   $("mTap").value = tap; $("mBoot").value = boot;
   if (!confirm(T(m ? "Включить режим OpenDisplay? Метка перезагрузится и будет всегда доступна по Bluetooth (расход батареи выше)." : "Включить автономный режим? Метка перезагрузится. Дальше Bluetooth включается только после касания телефоном и на время после включения питания; эта страница сможет подключиться в эти окна.") )) return;
   send(Uint8Array.from([0x4F, 6, tap, boot]));
+  if (m !== +lastMode) reWanted = 1;	/* a mode change restarts the tag */
   setTimeout(() => send(Uint8Array.from([0x4F, 5, m])), 500);
 };
 $("bOdGet").onclick = () => send("4D");
